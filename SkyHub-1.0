@@ -1,4 +1,4 @@
--- SkyHub Premium (с программным логотипом)
+-- SkyHub Premium (с AutoFarm и Troll)
 -- Автор: dont16383
 
 local Players = game:GetService("Players")
@@ -6,6 +6,8 @@ local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- ===== ЗАГРУЗОЧНЫЙ ЭКРАН =====
 local loadGui = Instance.new("ScreenGui")
@@ -114,6 +116,21 @@ local flyPulse = 0
 local lobbyPosition = nil
 local mapPosition = nil
 
+-- ===== ПЕРЕМЕННЫЕ ДЛЯ AUTOFARM =====
+local autoFarmEnabled = false
+local coinsFarmed = 0
+local farmConnection = nil
+local autoWinEnabled = false
+
+-- ===== ПЕРЕМЕННЫЕ ДЛЯ TROLL =====
+local headlessEnabled = false
+local korbloxEnabled = false
+local jerkEnabled = false
+local jerkConnection = nil
+local currentEmote = nil
+local currentAnim = nil
+local animTrack = nil
+
 -- ===== ФУНКЦИЯ СОЗДАНИЯ ЛОГОТИПА =====
 local function createLogo(parent, size, position)
     local container = Instance.new("Frame")
@@ -122,7 +139,6 @@ local function createLogo(parent, size, position)
     container.BackgroundTransparency = 1
     container.Parent = parent
 
-    -- Круглый фон с градиентом
     local bg = Instance.new("Frame")
     bg.Size = UDim2.new(1, 0, 1, 0)
     bg.BackgroundColor3 = Color3.fromRGB(30, 20, 60)
@@ -138,7 +154,6 @@ local function createLogo(parent, size, position)
     grad.Rotation = 45
     grad.Parent = bg
 
-    -- Обводка (блик)
     local border = Instance.new("Frame")
     border.Size = UDim2.new(1, -4, 1, -4)
     border.Position = UDim2.new(0, 2, 0, 2)
@@ -153,7 +168,6 @@ local function createLogo(parent, size, position)
     borderStroke.Transparency = 0.5
     borderStroke.Parent = border
 
-    -- Буква S
     local letter = Instance.new("TextLabel")
     letter.Size = UDim2.new(0.7, 0, 0.7, 0)
     letter.Position = UDim2.new(0.15, 0, 0.1, 0)
@@ -514,6 +528,155 @@ local function flingAllPlayers(force)
     end
 end
 
+-- ===== ФУНКЦИИ ДЛЯ AUTOFARM =====
+local function getClosestCoin()
+    local char = LocalPlayer.Character
+    if not char then return nil end
+    local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+    if not root then return nil end
+    local best = nil
+    local bestDist = math.huge
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and (obj.Name:lower():find("coin") or obj.Name:lower():find("money")) then
+            local dist = (obj.Position - root.Position).Magnitude
+            if dist < bestDist then
+                bestDist = dist
+                best = obj
+            end
+        end
+    end
+    return best
+end
+
+local function collectCoin()
+    local coin = getClosestCoin()
+    if coin then
+        local char = LocalPlayer.Character
+        if char then
+            local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+            if root then
+                root.CFrame = coin.CFrame + Vector3.new(0, 2, 0)
+                coinsFarmed = coinsFarmed + 1
+            end
+        end
+    end
+end
+
+local function startAutoFarm()
+    if farmConnection then farmConnection:Disconnect() end
+    farmConnection = RunService.Heartbeat:Connect(function()
+        if autoFarmEnabled then
+            collectCoin()
+        end
+    end)
+end
+
+local function stopAutoFarm()
+    if farmConnection then
+        farmConnection:Disconnect()
+        farmConnection = nil
+    end
+end
+
+-- ===== ФУНКЦИИ ДЛЯ TROLL =====
+local function playEmote(emoteName)
+    local humanoid = getHumanoid()
+    if humanoid then
+        pcall(function()
+            humanoid:PlayEmote(emoteName)
+        end)
+    end
+end
+
+local animIds = {
+    ["T-Pose"] = "rbxassetid://5598284032",
+    ["Zombie"] = "rbxassetid://6162184239",
+    ["Robot"] = "rbxassetid://6162187066",
+    ["Floss"] = "rbxassetid://6162190332",
+    ["Sit"] = "rbxassetid://180436356",
+    ["Point"] = "rbxassetid://180436356",
+}
+
+local function playAnimation(animName)
+    local humanoid = getHumanoid()
+    if not humanoid then return end
+    if animTrack then animTrack:Stop(); animTrack:Destroy() end
+    local id = animIds[animName]
+    if id then
+        local anim = Instance.new("Animation")
+        anim.AnimationId = id
+        local track = humanoid:LoadAnimation(anim)
+        track:Play()
+        animTrack = track
+    end
+end
+
+local function toggleKorblox(state)
+    korbloxEnabled = state
+    local char = LocalPlayer.Character
+    if not char then return end
+    local leftLeg = char:FindFirstChild("LeftLeg")
+    if leftLeg then
+        if state then
+            leftLeg.Transparency = 1
+        else
+            leftLeg.Transparency = 0
+        end
+    end
+end
+
+local function toggleHeadless(state)
+    headlessEnabled = state
+    local char = LocalPlayer.Character
+    if not char then return end
+    local head = char:FindFirstChild("Head")
+    if head then
+        head.Transparency = state and 1 or 0
+    end
+end
+
+local function toggleJerk(state)
+    jerkEnabled = state
+    if jerkConnection then jerkConnection:Disconnect(); jerkConnection = nil end
+    if state then
+        jerkConnection = RunService.Heartbeat:Connect(function()
+            local char = LocalPlayer.Character
+            if not char then return end
+            local arm = char:FindFirstChild("Right Arm") or char:FindFirstChild("RightHand")
+            if arm and arm:IsA("BasePart") then
+                local origCF = arm.CFrame
+                local offset = Vector3.new(math.random(-2,2)*0.1, math.random(-2,2)*0.1, math.random(-2,2)*0.1)
+                arm.CFrame = origCF + offset
+                task.wait(0.05)
+                arm.CFrame = origCF
+            end
+        end)
+    end
+end
+
+local songs = {
+    ["Макс Корж - Мотылёк"] = "rbxassetid://1839116943",
+    ["Okean Elzy - Обійми"] = "rbxassetid://1839116944",
+    ["Imagine Dragons - Believer"] = "rbxassetid://1839116945",
+    ["Моргенштерн - Малышка"] = "rbxassetid://1839116946",
+    ["Антитіла - TDME"] = "rbxassetid://1839116947",
+    ["Ed Sheeran - Shape of You"] = "rbxassetid://1839116948",
+}
+local currentSong = nil
+local soundObj = nil
+
+local function playSong(songName)
+    if soundObj then soundObj:Destroy(); soundObj = nil end
+    local id = songs[songName]
+    if id then
+        soundObj = Instance.new("Sound")
+        soundObj.SoundId = id
+        soundObj.Parent = game:GetService("CoreGui")
+        soundObj:Play()
+        currentSong = songName
+    end
+end
+
 -- ===== ЛОКАЛИЗАЦИЯ =====
 local texts = {
     ru = {
@@ -525,6 +688,8 @@ local texts = {
         tabBio = "Bio",
         tabTeleport = "📍 Телепорт",
         tabFling = "🌀 Флинг",
+        tabAutoFarm = "💰 AutoFarm",
+        tabTroll = "🎭 Troll/Funny",
         walkSpeed = "Скорость бега",
         jumpPower = "Сила прыжка",
         scale = "Размер",
@@ -567,7 +732,16 @@ local texts = {
         fling = "Флинг игрока",
         flingMurder = "Флинг убийцы",
         flingSheriff = "Флинг шерифа",
-        flingAll = "Флинг всех"
+        flingAll = "Флинг всех",
+        autoFarmCoins = "AutoFarm Coins",
+        coinsEarned = "Заработано монет: ",
+        autoWin = "Auto win round",
+        emotes = "Эмоции",
+        animations = "Анимации",
+        korblox = "Korblox",
+        headless = "Headless",
+        jerk = "JERK",
+        songs = "Песни"
     },
     en = {
         title = "SkyHub",
@@ -578,6 +752,8 @@ local texts = {
         tabBio = "Bio",
         tabTeleport = "📍 Teleport",
         tabFling = "🌀 Fling",
+        tabAutoFarm = "💰 AutoFarm",
+        tabTroll = "🎭 Troll/Funny",
         walkSpeed = "Walk Speed",
         jumpPower = "Jump Power",
         scale = "Scale",
@@ -620,7 +796,16 @@ local texts = {
         fling = "Fling player",
         flingMurder = "Fling Murder",
         flingSheriff = "Fling Sheriff",
-        flingAll = "Fling All"
+        flingAll = "Fling All",
+        autoFarmCoins = "AutoFarm Coins",
+        coinsEarned = "Coins earned: ",
+        autoWin = "Auto win round",
+        emotes = "Emotes",
+        animations = "Animations",
+        korblox = "Korblox",
+        headless = "Headless",
+        jerk = "JERK",
+        songs = "Songs"
     }
 }
 local function getText(key) return texts[menuLanguage][key] or texts.ru[key] end
@@ -662,10 +847,9 @@ grad.Rotation = 45
 grad.Parent = gradient
 Instance.new("UICorner").Parent = gradient
 
--- ===== ЛОГОТИП В МЕНЮ =====
+-- Логотип
 local logoContainer = createLogo(frame, UDim2.new(0, 42, 0, 42), UDim2.new(0, 8, 0, 4))
 
--- Заголовок (сдвинут вправо)
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(0.6, 0, 0, 40)
 titleLabel.Position = UDim2.new(0, 55, 0, 5)
@@ -677,7 +861,6 @@ titleLabel.TextSize = 26
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = frame
 
--- ===== КНОПКА ЗАКРЫТИЯ =====
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
 closeBtn.Position = UDim2.new(1, -40, 0, 7)
@@ -691,7 +874,7 @@ Instance.new("UICorner").Parent = closeBtn
 closeBtn.MouseEnter:Connect(function() closeBtn.BackgroundColor3 = Color3.fromRGB(255,60,60) end)
 closeBtn.MouseLeave:Connect(function() closeBtn.BackgroundColor3 = Color3.fromRGB(200,50,50) end)
 
--- ===== ИКОНКА СВОРАЧИВАНИЯ (с логотипом) =====
+-- Иконка сворачивания
 local iconButton = Instance.new("TextButton")
 iconButton.Size = UDim2.new(0, 50, 0, 50)
 iconButton.Position = UDim2.new(0, 10, 0, 10)
@@ -701,7 +884,6 @@ iconButton.Visible = false
 iconButton.Text = ""
 iconButton.Parent = gui
 Instance.new("UICorner").Parent = iconButton
--- Вставляем логотип в иконку
 local iconLogo = createLogo(iconButton, UDim2.new(1, -4, 1, -4), UDim2.new(0, 2, 0, 2))
 iconButton.MouseEnter:Connect(function()
     iconButton.BackgroundColor3 = Color3.fromRGB(50,50,80)
@@ -710,7 +892,7 @@ iconButton.MouseLeave:Connect(function()
     iconButton.BackgroundColor3 = menuColor
 end)
 
--- ===== БОКОВАЯ ПАНЕЛЬ =====
+-- Боковая панель
 local sidebar = Instance.new("Frame")
 sidebar.Size = UDim2.new(0, 110, 1, -50)
 sidebar.Position = UDim2.new(0, 8, 0, 48)
@@ -731,12 +913,15 @@ buttonContainer.Size = UDim2.new(1, 0, 0, 0)
 buttonContainer.BackgroundTransparency = 1
 buttonContainer.Parent = scrollFrameSide
 
+-- Список вкладок
 local tabs = {
     {id = "Player", icon = "◉", textKey = "tabPlayer"},
     {id = "ESP", icon = "✦", textKey = "tabESP"},
     {id = "Visual", icon = "◆", textKey = "tabVisual"},
     {id = "Teleport", icon = "📍", textKey = "tabTeleport"},
     {id = "Fling", icon = "🌀", textKey = "tabFling"},
+    {id = "AutoFarm", icon = "💰", textKey = "tabAutoFarm"},
+    {id = "Troll", icon = "🎭", textKey = "tabTroll"},
     {id = "Settings", icon = "⚙", textKey = "tabSettings"},
     {id = "Bio", icon = "✉", textKey = "tabBio"}
 }
@@ -812,7 +997,7 @@ for _, tab in ipairs(tabs) do
     tabContainers[tab.id] = {container=container, scroll=scroll, inner=inner, currentY=5}
 end
 
--- ===== КОНТРОЛЫ (сокращённо, но полные) =====
+-- ===== КОНТРОЛЫ =====
 local function createNumberRow(parent, labelText, yPos, minVal, maxVal, step, defaultValue, valueType, callback)
     local row = Instance.new("Frame")
     row.Size = UDim2.new(1, -5, 0, 32)
@@ -1022,7 +1207,6 @@ local function createDropdown(parent, labelText, yPos, items, default, callback)
     return dropdown
 end
 
--- ===== ФУНКЦИЯ ДОБАВЛЕНИЯ =====
 local function addToContainer(tabId, builder)
     local data = tabContainers[tabId]
     if not data then return end
@@ -1033,6 +1217,7 @@ local function addToContainer(tabId, builder)
 end
 
 -- ===== ЗАПОЛНЯЕМ ВКЛАДКИ =====
+-- Player
 addToContainer("Player", function(parent, y)
     createNumberRow(parent, getText("walkSpeed"), y, 0, 100, 1, DEFAULT_WALK, "integer", function(v) currentWalk = v; applyPlayerSettings() end)
     y = y + 38
@@ -1061,6 +1246,7 @@ addToContainer("Player", function(parent, y)
     return y
 end)
 
+-- ESP
 addToContainer("ESP", function(parent, y)
     createToggleRow(parent, getText("espPlayers"), y, false, function(s)
         espPlayersEnabled = s
@@ -1075,6 +1261,7 @@ addToContainer("ESP", function(parent, y)
     return y
 end)
 
+-- Visual
 addToContainer("Visual", function(parent, y)
     local skyLabel = Instance.new("TextLabel")
     skyLabel.Size = UDim2.new(1, 0, 0, 28)
@@ -1208,6 +1395,7 @@ addToContainer("Visual", function(parent, y)
     return y
 end)
 
+-- Teleport
 addToContainer("Teleport", function(parent, y)
     local dd = createDropdown(parent, getText("tpTo"), y, getOtherPlayers(), "Выберите игрока", function(pl)
         teleportToPlayer(pl)
@@ -1234,6 +1422,7 @@ addToContainer("Teleport", function(parent, y)
     return y
 end)
 
+-- Fling
 addToContainer("Fling", function(parent, y)
     local dd = createDropdown(parent, getText("fling"), y, getOtherPlayers(), "Выберите игрока", function(pl)
         flingPlayer(pl, Vector3.new(0, 150, 0))
@@ -1258,6 +1447,7 @@ addToContainer("Fling", function(parent, y)
     return y
 end)
 
+-- Settings
 addToContainer("Settings", function(parent, y)
     local colorLabel = Instance.new("TextLabel")
     colorLabel.Size = UDim2.new(1, 0, 0, 28)
@@ -1396,6 +1586,7 @@ addToContainer("Settings", function(parent, y)
     return y
 end)
 
+-- Bio
 addToContainer("Bio", function(parent, y)
     local bioTitle = Instance.new("TextLabel")
     bioTitle.Size = UDim2.new(1, 0, 0, 30)
@@ -1428,6 +1619,95 @@ addToContainer("Bio", function(parent, y)
     y = y + 34
     createBioLabel(getText("discord"), y, Color3.new(0.8,0.6,1))
     y = y + 34
+    return y
+end)
+
+-- ===== НОВАЯ ВКЛАДКА AUTOFARM =====
+addToContainer("AutoFarm", function(parent, y)
+    createToggleRow(parent, getText("autoFarmCoins"), y, false, function(s)
+        autoFarmEnabled = s
+        if s then startAutoFarm() else stopAutoFarm() end
+    end)
+    y = y + 38
+
+    local coinsLabel = Instance.new("TextLabel")
+    coinsLabel.Size = UDim2.new(1, 0, 0, 28)
+    coinsLabel.Position = UDim2.new(0, 0, 0, y)
+    coinsLabel.BackgroundTransparency = 1
+    coinsLabel.Text = getText("coinsEarned") .. "0"
+    coinsLabel.TextColor3 = Color3.new(0.9,0.9,1)
+    coinsLabel.Font = Enum.Font.Gotham
+    coinsLabel.TextSize = 14
+    coinsLabel.Parent = parent
+    -- Обновлять каждую секунду
+    local coinsUpdater
+    coinsUpdater = RunService.Heartbeat:Connect(function()
+        if coinsLabel then
+            coinsLabel.Text = getText("coinsEarned") .. tostring(coinsFarmed)
+        end
+    end)
+    -- Сохраняем для очистки
+    parent._coinsUpdater = coinsUpdater
+    y = y + 34
+
+    createToggleRow(parent, getText("autoWin"), y, false, function(s)
+        autoWinEnabled = s
+        if s then
+            isInvisible = true
+            noclipEnabled = true
+            applyPlayerSettings()
+            updateNoclip()
+        else
+            isInvisible = DEFAULT_INVISIBLE
+            noclipEnabled = false
+            applyPlayerSettings()
+            updateNoclip()
+        end
+    end)
+    y = y + 38
+    return y
+end)
+
+-- ===== НОВАЯ ВКЛАДКА TROLL =====
+addToContainer("Troll", function(parent, y)
+    -- Эмоции (выпадающий список)
+    local emotesList = {"Wave", "Point", "Cheer", "Dance", "Laugh", "Shrug", "Blush", "Pose"}
+    local ddEmotes = createDropdown(parent, getText("emotes"), y, emotesList, "Выберите", function(emote)
+        playEmote(emote)
+    end)
+    y = y + 38
+
+    -- Анимации (выпадающий список)
+    local animList = {"T-Pose", "Zombie", "Robot", "Floss", "Sit", "Point"}
+    local ddAnims = createDropdown(parent, getText("animations"), y, animList, "Выберите", function(anim)
+        playAnimation(anim)
+    end)
+    y = y + 38
+
+    -- Korblox
+    createToggleRow(parent, getText("korblox"), y, false, function(s)
+        toggleKorblox(s)
+    end)
+    y = y + 38
+
+    -- Headless
+    createToggleRow(parent, getText("headless"), y, false, function(s)
+        toggleHeadless(s)
+    end)
+    y = y + 38
+
+    -- JERK
+    createToggleRow(parent, getText("jerk"), y, false, function(s)
+        toggleJerk(s)
+    end)
+    y = y + 38
+
+    -- Песни (выпадающий список)
+    local songsList = {"Макс Корж - Мотылёк", "Okean Elzy - Обійми", "Imagine Dragons - Believer", "Моргенштерн - Малышка", "Антитіла - TDME", "Ed Sheeran - Shape of You"}
+    local ddSongs = createDropdown(parent, getText("songs"), y, songsList, "Выберите", function(song)
+        playSong(song)
+    end)
+    y = y + 38
     return y
 end)
 
@@ -1499,6 +1779,8 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     setupInvisibilityTracker(char)
     if flyEnabled then startFly() end
     if noclipEnabled then updateNoclip() end
+    if headlessEnabled then toggleHeadless(true) end
+    if korbloxEnabled then toggleKorblox(true) end
     savePositions()
 end)
 
@@ -1537,4 +1819,4 @@ applyPlayerSettings()
 applyCharacterColor(characterColor)
 updateGlow()
 
-print("SkyHub Premium (с программным логотипом) загружен! By dont16383")
+print("SkyHub Premium (с AutoFarm и Troll) загружен! By dont16383")
