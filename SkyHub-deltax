@@ -1,0 +1,1844 @@
+-- SkyHub Premium (с Teleport и Fling)
+-- Автор: dont16383
+
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+
+-- ===== НАСТРОЙКИ (без изменений) =====
+local DEFAULT_WALK = 16
+local DEFAULT_JUMP = 50
+local DEFAULT_SCALE = 1.0
+local DEFAULT_INVISIBLE = false
+
+local currentWalk = DEFAULT_WALK
+local currentJump = DEFAULT_JUMP
+local currentScale = DEFAULT_SCALE
+local isInvisible = DEFAULT_INVISIBLE
+
+local espPlayersEnabled = false
+local espGunEnabled = false
+
+local menuColor = Color3.fromRGB(25, 25, 40)
+local menuLanguage = "ru"
+local menuScale = 1.0
+
+local skyPreset = "Default"
+local weatherPreset = "Clear"
+local timeOfDay = 14
+local characterColor = Color3.new(1, 1, 1)
+local glowEnabled = false
+
+-- Параметры полёта и прыжков
+local flyEnabled = false
+local flySpeed = 16
+local flyAnimation = false
+local infinityJump = false
+
+-- Параметры Combat (без изменений)
+local sheriffAimbot = false
+local sheriffFOV = 30
+local sheriffSmoothness = 5
+local sheriffSilent = false
+local sheriffTrigger = false
+local sheriffAutoKill = false
+local sheriffWallHack = false
+local sheriffAutoShootMurder = false
+
+local murderAutoKillSheriff = false
+local murderKillAll = false
+local murderAutoKillAll = false
+local murderFlingSheriff = false
+local murderFlingAll = false
+local murderKnifeAimbot = false
+local murderKnifeAnim = false
+local murderFakeSheriff = false
+local murderSelectedPlayer = nil
+
+local innocentGodMode = false
+
+-- ===== ПЕРЕМЕННЫЕ ДЛЯ НОВЫХ ФУНКЦИЙ =====
+local lobbyPosition = nil  -- сохраним при старте
+local mapPosition = nil    -- центр карты (поищем объект)
+
+local playerHighlights = {}
+local gunHighlights = {}
+local glowObject = nil
+
+-- Переменные для полёта
+local flyBodyVelocity = nil
+local flyBodyGyro = nil
+local flyConnection = nil
+local flyPulse = 0
+
+-- ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (те же) =====
+local function getHumanoid()
+    local char = LocalPlayer.Character
+    if not char then return nil end
+    return char:FindFirstChild("Humanoid")
+end
+
+local function getRootPart()
+    local char = LocalPlayer.Character
+    if not char then return nil end
+    return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+end
+
+local function updateInvisibility(part)
+    if part:IsA("BasePart") then
+        part.Transparency = isInvisible and 1 or 0
+    end
+end
+
+local function applyPlayerSettings()
+    local humanoid = getHumanoid()
+    if not humanoid then return end
+    humanoid.WalkSpeed = currentWalk
+    if infinityJump then
+        humanoid.JumpPower = 9999
+    else
+        humanoid.JumpPower = currentJump
+    end
+    humanoid.Scale = currentScale
+
+    if innocentGodMode and humanoid then
+        humanoid.MaxHealth = 9e9
+        humanoid.Health = 9e9
+        humanoid.BreakJointsOnDeath = false
+    else
+        humanoid.MaxHealth = 100
+        humanoid.BreakJointsOnDeath = true
+    end
+
+    local char = LocalPlayer.Character
+    if not char then return end
+    for _, child in ipairs(char:GetDescendants()) do
+        updateInvisibility(child)
+    end
+    for _, child in ipairs(char:GetChildren()) do
+        if child:IsA("Accessory") or child:IsA("Hat") then
+            for _, part in ipairs(child:GetDescendants()) do
+                updateInvisibility(part)
+            end
+        end
+    end
+end
+
+local function setupInvisibilityTracker(character)
+    local connection
+    connection = character.DescendantAdded:Connect(function(part)
+        if isInvisible then
+            updateInvisibility(part)
+        end
+    end)
+    character._invisConnection = connection
+end
+
+-- ===== ЛОГИКА ПОЛЁТА (без изменений) =====
+local function startFly()
+    local root = getRootPart()
+    local humanoid = getHumanoid()
+    if not root or not humanoid then return end
+
+    if flyBodyVelocity then flyBodyVelocity:Destroy(); flyBodyVelocity = nil end
+    if flyBodyGyro then flyBodyGyro:Destroy(); flyBodyGyro = nil end
+
+    flyBodyVelocity = Instance.new("BodyVelocity")
+    flyBodyVelocity.MaxForce = Vector3.new(1, 1, 1) * 10000
+    flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    flyBodyVelocity.Parent = root
+
+    flyBodyGyro = Instance.new("BodyGyro")
+    flyBodyGyro.MaxTorque = Vector3.new(1, 1, 1) * 10000
+    flyBodyGyro.CFrame = root.CFrame
+    flyBodyGyro.Parent = root
+
+    humanoid.PlatformStand = true
+    humanoid.AutoRotate = false
+
+    if flyConnection then flyConnection:Disconnect() end
+    flyConnection = RunService.Heartbeat:Connect(function(dt)
+        updateFly(dt)
+    end)
+end
+
+local function stopFly()
+    if flyBodyVelocity then flyBodyVelocity:Destroy(); flyBodyVelocity = nil end
+    if flyBodyGyro then flyBodyGyro:Destroy(); flyBodyGyro = nil end
+    if flyConnection then flyConnection:Disconnect(); flyConnection = nil end
+
+    local humanoid = getHumanoid()
+    if humanoid then
+        humanoid.PlatformStand = false
+        humanoid.AutoRotate = true
+    end
+end
+
+local function updateFly(dt)
+    if not flyEnabled then return end
+    local root = getRootPart()
+    local humanoid = getHumanoid()
+    if not root or not humanoid then return end
+
+    local camera = workspace.CurrentCamera
+    if not camera then return end
+    local camCF = camera.CFrame
+    local forward = camCF.LookVector * Vector3.new(1, 0, 1)
+    if forward.Magnitude < 0.1 then forward = Vector3.new(1, 0, 0) end
+    forward = forward.Unit
+    local right = camCF.RightVector * Vector3.new(1, 0, 1)
+    if right.Magnitude < 0.1 then right = Vector3.new(1, 0, 0) end
+    right = right.Unit
+    local up = Vector3.new(0, 1, 0)
+
+    local moveVector = Vector3.new(0, 0, 0)
+    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+        moveVector = moveVector + forward
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+        moveVector = moveVector - forward
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+        moveVector = moveVector - right
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+        moveVector = moveVector + right
+    end
+
+    local vertical = 0
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        vertical = 1
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+        vertical = -1
+    end
+
+    if moveVector.Magnitude > 0 then
+        moveVector = moveVector.Unit * flySpeed
+    end
+    local verticalSpeed = vertical * flySpeed * 0.8
+
+    local velocity = moveVector + up * verticalSpeed
+    if flyBodyVelocity then
+        flyBodyVelocity.Velocity = velocity
+    end
+
+    if flyBodyGyro and moveVector.Magnitude > 0.1 then
+        local look = CFrame.lookAt(root.Position, root.Position + moveVector)
+        flyBodyGyro.CFrame = look
+    elseif flyBodyGyro then
+        flyBodyGyro.CFrame = CFrame.new(root.Position, root.Position + forward)
+    end
+
+    if flyAnimation then
+        flyPulse = flyPulse + dt * 2
+        local wave = math.sin(flyPulse) * 0.3
+        if flyBodyVelocity then
+            flyBodyVelocity.Velocity = flyBodyVelocity.Velocity + Vector3.new(0, wave * 0.5, 0)
+        end
+    end
+end
+
+-- ===== ВИЗУАЛЬНЫЕ ФУНКЦИИ (без изменений) =====
+local function applySkybox(preset)
+    skyPreset = preset
+    local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky")
+    sky.Parent = Lighting
+    if preset == "Default" then
+        sky.SkyboxBk = "rbxasset://textures/sky/skybox/skyBk.tex"
+        sky.SkyboxDn = "rbxasset://textures/sky/skybox/skyDn.tex"
+        sky.SkyboxFt = "rbxasset://textures/sky/skybox/skyFt.tex"
+        sky.SkyboxLf = "rbxasset://textures/sky/skybox/skyLf.tex"
+        sky.SkyboxRt = "rbxasset://textures/sky/skybox/skyRt.tex"
+        sky.SkyboxUp = "rbxasset://textures/sky/skybox/skyUp.tex"
+    elseif preset == "Sunset" then
+        for _, dir in ipairs({"Bk","Dn","Ft","Lf","Rt","Up"}) do
+            sky["Skybox"..dir] = "rbxassetid://189338394"
+        end
+    elseif preset == "Night" then
+        for _, dir in ipairs({"Bk","Dn","Ft","Lf","Rt","Up"}) do
+            sky["Skybox"..dir] = "rbxassetid://189338466"
+        end
+    elseif preset == "Space" then
+        for _, dir in ipairs({"Bk","Dn","Ft","Lf","Rt","Up"}) do
+            sky["Skybox"..dir] = "rbxassetid://189338532"
+        end
+    end
+end
+
+local function applyWeather(preset)
+    weatherPreset = preset
+    if preset == "Clear" then
+        Lighting.FogEnd = 1000
+        Lighting.FogStart = 0
+        Lighting.Brightness = 1
+        Lighting.Ambient = Color3.new(0.5, 0.5, 0.5)
+        Lighting.Climate = Enum.Climate.Default
+    elseif preset == "Rain" then
+        Lighting.FogEnd = 300
+        Lighting.FogStart = 50
+        Lighting.Brightness = 0.6
+        Lighting.Ambient = Color3.new(0.3, 0.3, 0.4)
+        Lighting.Climate = Enum.Climate.Rainy
+    elseif preset == "Foggy" then
+        Lighting.FogEnd = 150
+        Lighting.FogStart = 10
+        Lighting.Brightness = 0.8
+        Lighting.Ambient = Color3.new(0.6, 0.6, 0.7)
+        Lighting.Climate = Enum.Climate.Foggy
+    end
+end
+
+local function applyTimeOfDay(value)
+    timeOfDay = value
+    Lighting.ClockTime = value
+end
+
+local function applyCharacterColor(color)
+    characterColor = color
+    local char = LocalPlayer.Character
+    if char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") and part.Name ~= "Head" then
+                part.Color = color
+            end
+        end
+    end
+end
+
+local function updateGlow()
+    if glowObject then glowObject:Destroy(); glowObject = nil end
+    if not glowEnabled then return end
+    local char = LocalPlayer.Character
+    if not char then return end
+    local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+    if not torso then return end
+    glowObject = Instance.new("PointLight")
+    glowObject.Parent = torso
+    glowObject.Color = Color3.new(0, 1, 1)
+    glowObject.Brightness = 2
+    glowObject.Range = 10
+    glowObject.Enabled = true
+end
+
+-- ===== ESP ФУНКЦИИ (без изменений) =====
+local function getPlayerRole(player)
+    if player == LocalPlayer then return nil end
+    if player.Team then
+        local n = player.Team.Name
+        if n == "Murderer" or n == "Murder" then return "Murder"
+        elseif n == "Sheriff" or n == "Sheriffs" then return "Sheriff"
+        else return "Innocent" end
+    end
+    if player.TeamColor then
+        local col = player.TeamColor.Color
+        if col == Color3.new(1,0,0) then return "Murder"
+        elseif col == Color3.new(0,0,1) then return "Sheriff"
+        else return "Innocent" end
+    end
+    return "Innocent"
+end
+
+local function updatePlayerHighlight(player)
+    if player == LocalPlayer then return end
+    if not espPlayersEnabled then
+        if playerHighlights[player] then
+            playerHighlights[player]:Destroy()
+            playerHighlights[player] = nil
+        end
+        return
+    end
+    local ch = player.Character
+    if not ch then return end
+    if playerHighlights[player] then
+        playerHighlights[player]:Destroy()
+        playerHighlights[player] = nil
+    end
+    local role = getPlayerRole(player)
+    local fc
+    if role == "Murder" then fc = Color3.new(1,0,0)
+    elseif role == "Sheriff" then fc = Color3.new(0,0,1)
+    else fc = Color3.new(0,1,0) end
+    local hl = Instance.new("Highlight")
+    hl.Parent = ch
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    hl.FillColor = fc
+    hl.OutlineColor = Color3.new(1,1,1)
+    hl.FillTransparency = 0.4
+    hl.OutlineTransparency = 0
+    playerHighlights[player] = hl
+end
+
+local function refreshAllPlayers()
+    for _, p in ipairs(Players:GetPlayers()) do updatePlayerHighlight(p) end
+end
+
+local function updateGunHighlight(obj)
+    if not espGunEnabled then
+        if gunHighlights[obj] then gunHighlights[obj]:Destroy(); gunHighlights[obj] = nil end
+        return
+    end
+    if obj:IsA("Tool") or obj:IsA("Model") then
+        local n = obj.Name:lower()
+        if n:find("gun") or n:find("pistol") or n:find("weapon") then
+            local par = obj.Parent
+            if par and par:FindFirstChild("Humanoid") then return end
+            if obj:IsDescendantOf(workspace) and not obj:IsDescendantOf(LocalPlayer.Character) then
+                if gunHighlights[obj] then gunHighlights[obj]:Destroy(); gunHighlights[obj] = nil end
+                local hl = Instance.new("Highlight")
+                hl.Parent = obj
+                hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                hl.FillColor = Color3.new(1,1,0)
+                hl.OutlineColor = Color3.new(1,1,0)
+                hl.FillTransparency = 0.3
+                hl.OutlineTransparency = 0
+                gunHighlights[obj] = hl
+            end
+        end
+    end
+end
+
+local function scanExistingGuns()
+    for _, o in ipairs(workspace:GetDescendants()) do updateGunHighlight(o) end
+end
+
+-- ===== НОВЫЕ ФУНКЦИИ ДЛЯ TELEPORT И FLING =====
+
+-- Получить всех игроков (кроме себя)
+local function getOtherPlayers()
+    local list = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            table.insert(list, p)
+        end
+    end
+    return list
+end
+
+-- Найти игрока по роли
+local function findPlayerByRole(role)
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and getPlayerRole(p) == role then
+            return p
+        end
+    end
+    return nil
+end
+
+-- Телепорт к игроку
+local function teleportToPlayer(player)
+    local char = player.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+    if not root then return end
+    local myChar = LocalPlayer.Character
+    if not myChar then return end
+    local myRoot = myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Torso")
+    if myRoot then
+        myRoot.CFrame = root.CFrame + Vector3.new(0, 3, 0) -- чуть выше, чтобы не заспавниться внутри
+    end
+end
+
+-- Телепорт в лобби (сохраняем позицию при старте)
+local function teleportToLobby()
+    if lobbyPosition then
+        local myChar = LocalPlayer.Character
+        if myChar then
+            local root = myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Torso")
+            if root then
+                root.CFrame = lobbyPosition
+            end
+        end
+    end
+end
+
+-- Телепорт на карту (центр карты)
+local function teleportToMap()
+    if mapPosition then
+        local myChar = LocalPlayer.Character
+        if myChar then
+            local root = myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Torso")
+            if root then
+                root.CFrame = mapPosition
+            end
+        end
+    else
+        -- Если не нашли, попробуем найти объект "Map" или "Baseplate"
+        local map = workspace:FindFirstChild("Map") or workspace:FindFirstChild("Baseplate")
+        if map and map:IsA("BasePart") then
+            mapPosition = map.CFrame
+            teleportToMap()
+        end
+    end
+end
+
+-- Флинг (отбросить) игрока
+local function flingPlayer(player, force)
+    local char = player.Character
+    if char then
+        local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+        if root then
+            local bv = Instance.new("BodyVelocity")
+            bv.MaxForce = Vector3.new(1,1,1) * 10000
+            bv.Velocity = force
+            bv.Parent = root
+            task.wait(0.3)
+            bv:Destroy()
+        end
+    end
+end
+
+-- Флинг всех
+local function flingAllPlayers(force)
+    for _, p in ipairs(getOtherPlayers()) do
+        flingPlayer(p, force)
+    end
+end
+
+-- ===== ЛОКАЛИЗАЦИЯ (обновлена) =====
+local texts = {
+    ru = {
+        title = "SkyHub",
+        tabPlayer = "Игрок",
+        tabESP = "ESP",
+        tabVisual = "Визуал",
+        tabSettings = "Настройки",
+        tabBio = "Bio",
+        tabCombat = "⚔ Combat",
+        tabTeleport = "📍 Телепорт",
+        tabFling = "🌀 Флинг",
+        walkSpeed = "Скорость бега",
+        jumpPower = "Сила прыжка",
+        scale = "Размер",
+        invisible = "Невидимость",
+        fly = "Полет",
+        flySpeed = "Скорость полета",
+        flyAnim = "Анимация полета",
+        infinityJump = "Бесконечный прыжок",
+        reset = "🔄 Сбросить",
+        espPlayers = "Подсветка игроков",
+        espGun = "Подсветка оружия",
+        settingsColor = "Цвет меню",
+        settingsLang = "Язык",
+        settingsSize = "Размер меню",
+        decrease = "−",
+        increase = "+",
+        skybox = "Небо",
+        weather = "Погода",
+        time = "Время суток",
+        charColor = "Цвет персонажа",
+        glow = "Свечение",
+        defaultSky = "Стандарт",
+        sunset = "Закат",
+        night = "Ночь",
+        space = "Космос",
+        clear = "Ясно",
+        rain = "Дождь",
+        foggy = "Туман",
+        bioTitle = "📌 Мои контакты",
+        tg = "Telegram: @kazobl",
+        tgChannel = "Telegram-канал: @SkyHub_Deltax",
+        discord = "Discord: (скоро)",
+        credit = "👑 By dont16383",
+        combatMode = "Режим:",
+        sheriff = "Шериф",
+        murder = "Убийца",
+        innocent = "Невинный",
+        aimbot = "Aimbot",
+        aimbotFOV = "Aimbot FOV",
+        aimbotSmooth = "Aimbot Smoothness",
+        silentAim = "Silent Aim",
+        triggerBot = "Trigger Bot",
+        autoKill = "Auto Kill",
+        wallHack = "Wall Hack",
+        autoShootMurder = "Auto Shoot Murder",
+        flingMurder = "Fling Murder",
+        autoKillSheriff = "Auto Kill Sheriff",
+        killAll = "Kill All",
+        autoKillAll = "Auto Kill All",
+        flingSheriff = "Fling Sheriff",
+        flingAll = "Fling All",
+        knifeAimbot = "Knife Throw Aimbot",
+        knifeAnim = "Knife v2 Animation",
+        fakeSheriff = "Fake Sheriff",
+        killSelected = "Kill selected player:",
+        godMode = "God Mode",
+        tpTo = "Tp to",
+        tpMurder = "Tp to Murder",
+        tpSheriff = "Tp to Sheriff",
+        tpLobby = "Tp to Lobby",
+        tpMap = "Tp to Map",
+        fling = "Fling",
+        flingMurder2 = "Fling Murder",
+        flingSheriff2 = "Fling Sheriff",
+        flingAll2 = "Fling All"
+    },
+    en = {
+        title = "SkyHub",
+        tabPlayer = "Player",
+        tabESP = "ESP",
+        tabVisual = "Visual",
+        tabSettings = "Settings",
+        tabBio = "Bio",
+        tabCombat = "⚔ Combat",
+        tabTeleport = "📍 Teleport",
+        tabFling = "🌀 Fling",
+        walkSpeed = "Walk Speed",
+        jumpPower = "Jump Power",
+        scale = "Scale",
+        invisible = "Invisible",
+        fly = "Fly",
+        flySpeed = "Fly Speed",
+        flyAnim = "Fly Animation",
+        infinityJump = "Infinity Jump",
+        reset = "🔄 Reset",
+        espPlayers = "Highlight Players",
+        espGun = "Highlight Gun",
+        settingsColor = "Menu Color",
+        settingsLang = "Language",
+        settingsSize = "Menu Size",
+        decrease = "−",
+        increase = "+",
+        skybox = "Skybox",
+        weather = "Weather",
+        time = "Time of Day",
+        charColor = "Character Color",
+        glow = "Glow",
+        defaultSky = "Default",
+        sunset = "Sunset",
+        night = "Night",
+        space = "Space",
+        clear = "Clear",
+        rain = "Rain",
+        foggy = "Foggy",
+        bioTitle = "📌 My Contacts",
+        tg = "Telegram: @kazobl",
+        tgChannel = "Telegram Channel: @SkyHub_Deltax",
+        discord = "Discord: (soon)",
+        credit = "👑 By dont16383",
+        combatMode = "Mode:",
+        sheriff = "Sheriff",
+        murder = "Murder",
+        innocent = "Innocent",
+        aimbot = "Aimbot",
+        aimbotFOV = "Aimbot FOV",
+        aimbotSmooth = "Aimbot Smoothness",
+        silentAim = "Silent Aim",
+        triggerBot = "Trigger Bot",
+        autoKill = "Auto Kill",
+        wallHack = "Wall Hack",
+        autoShootMurder = "Auto Shoot Murder",
+        flingMurder = "Fling Murder",
+        autoKillSheriff = "Auto Kill Sheriff",
+        killAll = "Kill All",
+        autoKillAll = "Auto Kill All",
+        flingSheriff = "Fling Sheriff",
+        flingAll = "Fling All",
+        knifeAimbot = "Knife Throw Aimbot",
+        knifeAnim = "Knife v2 Animation",
+        fakeSheriff = "Fake Sheriff",
+        killSelected = "Kill selected player:",
+        godMode = "God Mode",
+        tpTo = "Tp to",
+        tpMurder = "Tp to Murder",
+        tpSheriff = "Tp to Sheriff",
+        tpLobby = "Tp to Lobby",
+        tpMap = "Tp to Map",
+        fling = "Fling",
+        flingMurder2 = "Fling Murder",
+        flingSheriff2 = "Fling Sheriff",
+        flingAll2 = "Fling All"
+    }
+}
+local function getText(key) return texts[menuLanguage][key] or texts.ru[key] end
+
+-- ===== ПОСТРОЕНИЕ GUI (УЛУЧШЕННОЕ) =====
+local gui = Instance.new("ScreenGui")
+gui.Name = "SkyHubGUI"
+gui.Parent = game:GetService("CoreGui")
+
+-- Главный фрейм (уменьшен до 480x580)
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 480, 0, 580)
+frame.Position = UDim2.new(0.5, -240, 0.5, -290)
+frame.BackgroundColor3 = menuColor
+frame.BackgroundTransparency = 0.1
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
+
+-- Тень
+local shadow = Instance.new("ImageLabel")
+shadow.Size = UDim2.new(1, 12, 1, 12)
+shadow.Position = UDim2.new(0, -6, 0, -6)
+shadow.Image = "rbxassetid://1316049830"
+shadow.ImageColor3 = Color3.new(0,0,0)
+shadow.ImageTransparency = 0.7
+shadow.BackgroundTransparency = 1
+shadow.Parent = frame
+
+-- Скругление
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = frame
+
+-- Градиентный фон (тёмный)
+local gradient = Instance.new("Frame")
+gradient.Size = UDim2.new(1, 0, 1, 0)
+gradient.BackgroundTransparency = 0.5
+gradient.Parent = frame
+local grad = Instance.new("UIGradient")
+grad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 35)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 20))
+})
+grad.Rotation = 45
+grad.Parent = gradient
+Instance.new("UICorner").Parent = gradient
+
+-- Заголовок с иконкой
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(0.6, 0, 0, 40)
+titleLabel.Position = UDim2.new(0, 15, 0, 5)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "☰ " .. getText("title")
+titleLabel.TextColor3 = Color3.new(0.9, 0.8, 1)
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 26
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = frame
+
+-- Кнопка закрытия
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -40, 0, 7)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 18
+closeBtn.Parent = frame
+Instance.new("UICorner").Parent = closeBtn
+closeBtn.MouseEnter:Connect(function() closeBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60) end)
+closeBtn.MouseLeave:Connect(function() closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50) end)
+
+-- Мини-иконка (свёрнутое меню)
+local iconButton = Instance.new("TextButton")
+iconButton.Size = UDim2.new(0, 75, 0, 40)
+iconButton.Position = UDim2.new(0, 10, 0, 10)
+iconButton.BackgroundColor3 = menuColor
+iconButton.BackgroundTransparency = 0.15
+iconButton.Visible = false
+iconButton.Text = "☰ SkyHub"
+iconButton.TextColor3 = Color3.new(0.9, 0.8, 1)
+iconButton.Font = Enum.Font.GothamBold
+iconButton.TextSize = 16
+iconButton.Parent = gui
+Instance.new("UICorner").Parent = iconButton
+iconButton.MouseEnter:Connect(function() iconButton.BackgroundColor3 = Color3.fromRGB(50, 50, 80) end)
+iconButton.MouseLeave:Connect(function() iconButton.BackgroundColor3 = menuColor end)
+
+-- Боковая панель (уменьшена ширина до 110)
+local sidebar = Instance.new("Frame")
+sidebar.Size = UDim2.new(0, 110, 1, -50)
+sidebar.Position = UDim2.new(0, 8, 0, 48)
+sidebar.BackgroundTransparency = 1
+sidebar.Parent = frame
+
+local scrollFrameSide = Instance.new("ScrollingFrame")
+scrollFrameSide.Size = UDim2.new(1, 0, 1, 0)
+scrollFrameSide.BackgroundTransparency = 1
+scrollFrameSide.ScrollBarThickness = 3
+scrollFrameSide.ScrollBarImageColor3 = Color3.new(1, 1, 1)
+scrollFrameSide.ScrollBarImageTransparency = 0.6
+scrollFrameSide.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollFrameSide.Parent = sidebar
+
+local buttonContainer = Instance.new("Frame")
+buttonContainer.Size = UDim2.new(1, 0, 0, 0)
+buttonContainer.BackgroundTransparency = 1
+buttonContainer.Parent = scrollFrameSide
+
+-- Список вкладок (добавлены Teleport и Fling)
+local tabs = {
+    {id = "Player", icon = "◉", textKey = "tabPlayer"},
+    {id = "ESP", icon = "✦", textKey = "tabESP"},
+    {id = "Visual", icon = "◆", textKey = "tabVisual"},
+    {id = "Combat", icon = "⚔", textKey = "tabCombat"},
+    {id = "Teleport", icon = "📍", textKey = "tabTeleport"},
+    {id = "Fling", icon = "🌀", textKey = "tabFling"},
+    {id = "Settings", icon = "⚙", textKey = "tabSettings"},
+    {id = "Bio", icon = "✉", textKey = "tabBio"}
+}
+local tabButtons = {}
+local activeTab = "Player"
+
+local function createTabButton(tabData, index)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -6, 0, 38)
+    btn.Position = UDim2.new(0, 3, 0, 3 + (index-1)*44)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    btn.BackgroundTransparency = 0.4
+    btn.Text = tabData.icon .. " " .. getText(tabData.textKey)
+    btn.TextColor3 = Color3.new(0.8, 0.8, 0.9)
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 13
+    btn.Parent = buttonContainer
+    Instance.new("UICorner").Parent = btn
+    btn.MouseEnter:Connect(function()
+        if activeTab ~= tabData.id then
+            btn.BackgroundColor3 = Color3.fromRGB(55, 55, 80)
+            btn.TextColor3 = Color3.new(1, 1, 1)
+        end
+    end)
+    btn.MouseLeave:Connect(function()
+        if activeTab ~= tabData.id then
+            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+            btn.TextColor3 = Color3.new(0.8, 0.8, 0.9)
+        end
+    end)
+    btn.MouseButton1Click:Connect(function()
+        setActiveTab(tabData.id)
+    end)
+    tabButtons[tabData.id] = btn
+    return btn
+end
+
+for i, tab in ipairs(tabs) do
+    createTabButton(tab, i)
+end
+scrollFrameSide.CanvasSize = UDim2.new(0, 0, 0, 3 + #tabs * 44 + 10)
+
+-- Контейнер контента (увеличил область)
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, -130, 1, -55)
+content.Position = UDim2.new(0, 120, 0, 48)
+content.BackgroundTransparency = 1
+content.Parent = frame
+
+-- Создаём контейнеры для каждой вкладки (внутри них будет ScrollingFrame)
+local tabContainers = {}
+for _, tab in ipairs(tabs) do
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, 0, 1, 0)
+    container.BackgroundTransparency = 1
+    container.Visible = (tab.id == "Player")
+    container.Parent = content
+    
+    -- Внутренний скролл
+    local scroll = Instance.new("ScrollingFrame")
+    scroll.Size = UDim2.new(1, -10, 1, -5)
+    scroll.Position = UDim2.new(0, 5, 0, 5)
+    scroll.BackgroundTransparency = 1
+    scroll.ScrollBarThickness = 4
+    scroll.ScrollBarImageColor3 = Color3.new(1, 1, 1)
+    scroll.ScrollBarImageTransparency = 0.5
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scroll.Parent = container
+    
+    local inner = Instance.new("Frame")
+    inner.Size = UDim2.new(1, 0, 0, 0)
+    inner.BackgroundTransparency = 1
+    inner.Parent = scroll
+    
+    tabContainers[tab.id] = {
+        container = container,
+        scroll = scroll,
+        inner = inner
+    }
+end
+
+-- ===== КОНТРОЛЫ (улучшенные, с уменьшенными отступами) =====
+local function createNumberRow(parent, labelText, yPos, minVal, maxVal, step, defaultValue, valueType, callback)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -5, 0, 32)
+    row.Position = UDim2.new(0, 2, 0, yPos)
+    row.BackgroundTransparency = 1
+    row.Parent = parent
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.4, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = labelText
+    label.TextColor3 = Color3.new(0.9, 0.9, 1)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = row
+
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(0.1, 0, 0.7, 0)
+    box.Position = UDim2.new(0.58, 0, 0.15, 0)
+    box.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+    box.TextColor3 = Color3.new(1, 1, 1)
+    box.Font = Enum.Font.Gotham
+    box.TextSize = 13
+    box.Text = tostring(defaultValue)
+    box.ClearTextOnFocus = false
+    box.Parent = row
+    Instance.new("UICorner").Parent = box
+
+    local minus = Instance.new("TextButton")
+    minus.Size = UDim2.new(0.08, 0, 0.7, 0)
+    minus.Position = UDim2.new(0.44, 0, 0.15, 0)
+    minus.Text = "−"
+    minus.TextColor3 = Color3.new(1, 1, 1)
+    minus.BackgroundColor3 = Color3.fromRGB(55, 55, 75)
+    minus.Font = Enum.Font.GothamBold
+    minus.TextSize = 16
+    minus.Parent = row
+    Instance.new("UICorner").Parent = minus
+    minus.MouseEnter:Connect(function() minus.BackgroundColor3 = Color3.fromRGB(70, 70, 90) end)
+    minus.MouseLeave:Connect(function() minus.BackgroundColor3 = Color3.fromRGB(55, 55, 75) end)
+
+    local plus = Instance.new("TextButton")
+    plus.Size = UDim2.new(0.08, 0, 0.7, 0)
+    plus.Position = UDim2.new(0.76, 0, 0.15, 0)
+    plus.Text = "+"
+    plus.TextColor3 = Color3.new(1, 1, 1)
+    plus.BackgroundColor3 = Color3.fromRGB(55, 55, 75)
+    plus.Font = Enum.Font.GothamBold
+    plus.TextSize = 16
+    plus.Parent = row
+    Instance.new("UICorner").Parent = plus
+    plus.MouseEnter:Connect(function() plus.BackgroundColor3 = Color3.fromRGB(70, 70, 90) end)
+    plus.MouseLeave:Connect(function() plus.BackgroundColor3 = Color3.fromRGB(55, 55, 75) end)
+
+    local function updateValue(newVal)
+        local clamped = math.clamp(newVal, minVal, maxVal)
+        clamped = math.floor(clamped / step + 0.5) * step
+        if valueType == "integer" then clamped = math.floor(clamped)
+        else clamped = math.round(clamped * 100) / 100 end
+        box.Text = tostring(clamped)
+        callback(clamped)
+    end
+
+    minus.MouseButton1Click:Connect(function()
+        local val = tonumber(box.Text) or 0
+        updateValue(val - step)
+    end)
+    plus.MouseButton1Click:Connect(function()
+        local val = tonumber(box.Text) or 0
+        updateValue(val + step)
+    end)
+    box.FocusLost:Connect(function(enter)
+        if enter then
+            local val = tonumber(box.Text)
+            if val then updateValue(val) else box.Text = tostring(defaultValue) end
+        end
+    end)
+end
+
+local function createToggleRow(parent, labelText, yPos, defaultValue, callback)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -5, 0, 32)
+    row.Position = UDim2.new(0, 2, 0, yPos)
+    row.BackgroundTransparency = 1
+    row.Parent = parent
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.6, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = labelText
+    label.TextColor3 = Color3.new(0.9, 0.9, 1)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = row
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.15, 0, 0.7, 0)
+    btn.Position = UDim2.new(0.7, 0, 0.15, 0)
+    btn.Text = defaultValue and "ВКЛ" or "ВЫКЛ"
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.BackgroundColor3 = defaultValue and Color3.fromRGB(70, 200, 70) or Color3.fromRGB(200, 70, 70)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    btn.Parent = row
+    Instance.new("UICorner").Parent = btn
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundColor3 = btn.BackgroundColor3 == Color3.fromRGB(70, 200, 70) and Color3.fromRGB(90, 220, 90) or Color3.fromRGB(220, 90, 90)
+    end)
+    btn.MouseLeave:Connect(function()
+        btn.BackgroundColor3 = btn.Text == "ВКЛ" and Color3.fromRGB(70, 200, 70) or Color3.fromRGB(200, 70, 70)
+    end)
+
+    btn.MouseButton1Click:Connect(function()
+        local newState = not (btn.Text == "ВКЛ")
+        btn.Text = newState and "ВКЛ" or "ВЫКЛ"
+        btn.BackgroundColor3 = newState and Color3.fromRGB(70, 200, 70) or Color3.fromRGB(200, 70, 70)
+        callback(newState)
+    end)
+end
+
+local function createButton(parent, labelText, yPos, callback)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -5, 0, 32)
+    row.Position = UDim2.new(0, 2, 0, yPos)
+    row.BackgroundTransparency = 1
+    row.Parent = parent
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.6, 0, 0.7, 0)
+    btn.Position = UDim2.new(0.2, 0, 0.15, 0)
+    btn.Text = labelText
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.BackgroundColor3 = Color3.fromRGB(70, 70, 120)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 13
+    btn.Parent = row
+    Instance.new("UICorner").Parent = btn
+    btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(90, 90, 150) end)
+    btn.MouseLeave:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(70, 70, 120) end)
+    btn.MouseButton1Click:Connect(callback)
+end
+
+local function createDropdown(parent, labelText, yPos, items, default, callback)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -5, 0, 32)
+    row.Position = UDim2.new(0, 2, 0, yPos)
+    row.BackgroundTransparency = 1
+    row.Parent = parent
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.4, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = labelText
+    label.TextColor3 = Color3.new(0.9, 0.9, 1)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = row
+
+    local dropdown = Instance.new("TextButton")
+    dropdown.Size = UDim2.new(0.35, 0, 0.7, 0)
+    dropdown.Position = UDim2.new(0.5, 0, 0.15, 0)
+    dropdown.Text = default or "Выберите"
+    dropdown.TextColor3 = Color3.new(1, 1, 1)
+    dropdown.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    dropdown.Font = Enum.Font.Gotham
+    dropdown.TextSize = 12
+    dropdown.Parent = row
+    Instance.new("UICorner").Parent = dropdown
+
+    local menu = Instance.new("Frame")
+    menu.Size = UDim2.new(0.35, 0, 0, 0)
+    menu.Position = UDim2.new(0.5, 0, 1, 2)
+    menu.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    menu.Visible = false
+    menu.Parent = row
+    Instance.new("UICorner").Parent = menu
+
+    local function updateItems()
+        for _, child in ipairs(menu:GetChildren()) do child:Destroy() end
+        for _, item in ipairs(items) do
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1, 0, 0, 26)
+            btn.Text = item.Name or item
+            btn.TextColor3 = Color3.new(1,1,1)
+            btn.BackgroundColor3 = Color3.fromRGB(50,50,70)
+            btn.Font = Enum.Font.Gotham
+            btn.TextSize = 12
+            btn.Parent = menu
+            btn.MouseButton1Click:Connect(function()
+                dropdown.Text = btn.Text
+                menu.Visible = false
+                menu.Size = UDim2.new(0.35, 0, 0, 0)
+                callback(item)
+            end)
+        end
+        menu.Size = UDim2.new(0.35, 0, 0, #items * 26 + 5)
+    end
+
+    dropdown.MouseButton1Click:Connect(function()
+        menu.Visible = not menu.Visible
+        if menu.Visible then
+            updateItems()
+        end
+    end)
+
+    return dropdown
+end
+
+-- ===== ЗАПОЛНЯЕМ ВКЛАДКИ (с использованием новых контейнеров) =====
+
+-- Для удобства создадим функцию добавления элементов с авто-расширением CanvasSize
+local function addToContainer(tabId, builderFunc)
+    local data = tabContainers[tabId]
+    if not data then return end
+    local parent = data.inner
+    local yPos = 0
+    -- мы будем передавать yPos и возвращать новую позицию после добавления
+    -- но для простоты мы будем использовать глобальный счётчик y для каждой вкладки
+    -- создадим таблицу с текущими y
+    if not data.currentY then data.currentY = 5 end
+    yPos = data.currentY
+    local newY = builderFunc(parent, yPos)
+    data.currentY = newY or yPos
+    -- обновляем CanvasSize
+    data.scroll.CanvasSize = UDim2.new(0, 0, 0, data.currentY + 20)
+end
+
+-- ===== PLAYER =====
+addToContainer("Player", function(parent, y)
+    createNumberRow(parent, getText("walkSpeed"), y, 0, 100, 1, DEFAULT_WALK, "integer", function(v)
+        currentWalk = v
+        applyPlayerSettings()
+    end)
+    y = y + 38
+    createNumberRow(parent, getText("jumpPower"), y, 0, 200, 1, DEFAULT_JUMP, "integer", function(v)
+        currentJump = v
+        applyPlayerSettings()
+    end)
+    y = y + 38
+    createNumberRow(parent, getText("scale"), y, 0.1, 5, 0.05, DEFAULT_SCALE, "number", function(v)
+        currentScale = v
+        applyPlayerSettings()
+    end)
+    y = y + 38
+    createToggleRow(parent, getText("invisible"), y, DEFAULT_INVISIBLE, function(state)
+        isInvisible = state
+        applyPlayerSettings()
+    end)
+    y = y + 38
+    createToggleRow(parent, getText("fly"), y, false, function(state)
+        flyEnabled = state
+        if state then startFly() else stopFly() end
+    end)
+    y = y + 38
+    createNumberRow(parent, getText("flySpeed"), y, 1, 50, 0.5, flySpeed, "number", function(v)
+        flySpeed = v
+    end)
+    y = y + 38
+    createToggleRow(parent, getText("flyAnim"), y, false, function(state)
+        flyAnimation = state
+    end)
+    y = y + 38
+    createToggleRow(parent, getText("infinityJump"), y, false, function(state)
+        infinityJump = state
+        applyPlayerSettings()
+    end)
+    y = y + 38
+    createButton(parent, getText("reset"), y, function()
+        currentWalk = DEFAULT_WALK
+        currentJump = DEFAULT_JUMP
+        currentScale = DEFAULT_SCALE
+        isInvisible = DEFAULT_INVISIBLE
+        flyEnabled = false
+        flySpeed = 16
+        flyAnimation = false
+        infinityJump = false
+        stopFly()
+        applyPlayerSettings()
+    end)
+    y = y + 38
+    return y
+end)
+
+-- ===== ESP =====
+addToContainer("ESP", function(parent, y)
+    createToggleRow(parent, getText("espPlayers"), y, false, function(state)
+        espPlayersEnabled = state
+        if state then refreshAllPlayers()
+        else
+            for p, h in pairs(playerHighlights) do h:Destroy(); playerHighlights[p] = nil end
+        end
+    end)
+    y = y + 38
+    createToggleRow(parent, getText("espGun"), y, false, function(state)
+        espGunEnabled = state
+        if state then scanExistingGuns()
+        else
+            for o, h in pairs(gunHighlights) do h:Destroy(); gunHighlights[o] = nil end
+        end
+    end)
+    y = y + 38
+    return y
+end)
+
+-- ===== VISUAL =====
+addToContainer("Visual", function(parent, y)
+    -- Skybox
+    local skyLabel = Instance.new("TextLabel")
+    skyLabel.Size = UDim2.new(1, 0, 0, 28)
+    skyLabel.Position = UDim2.new(0, 0, 0, y)
+    skyLabel.BackgroundTransparency = 1
+    skyLabel.Text = getText("skybox")
+    skyLabel.TextColor3 = Color3.new(0.9, 0.9, 1)
+    skyLabel.Font = Enum.Font.GothamBold
+    skyLabel.TextSize = 14
+    skyLabel.TextXAlignment = Enum.TextXAlignment.Left
+    skyLabel.Parent = parent
+    y = y + 32
+
+    local skyRow = Instance.new("Frame")
+    skyRow.Size = UDim2.new(1, -5, 0, 30)
+    skyRow.Position = UDim2.new(0, 2, 0, y)
+    skyRow.BackgroundTransparency = 1
+    skyRow.Parent = parent
+    local skyPresetsList = {{"Default", "Стандарт"}, {"Sunset", "Закат"}, {"Night", "Ночь"}, {"Space", "Космос"}}
+    for i, preset in ipairs(skyPresetsList) do
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0.22, 0, 1, 0)
+        b.Position = UDim2.new(0.02 + (0.22 + 0.02) * (i-1), 0, 0, 0)
+        b.Text = preset[2]
+        b.TextColor3 = Color3.new(1, 1, 1)
+        b.BackgroundColor3 = (skyPreset == preset[1]) and Color3.fromRGB(70, 200, 70) or Color3.fromRGB(60, 60, 80)
+        b.Font = Enum.Font.Gotham
+        b.TextSize = 9
+        b.Parent = skyRow
+        Instance.new("UICorner").Parent = b
+        b.MouseButton1Click:Connect(function()
+            skyPreset = preset[1]
+            applySkybox(preset[1])
+            for _, btn in ipairs(skyRow:GetChildren()) do
+                if btn:IsA("TextButton") then
+                    btn.BackgroundColor3 = (btn.Text == preset[2]) and Color3.fromRGB(70, 200, 70) or Color3.fromRGB(60, 60, 80)
+                end
+            end
+        end)
+    end
+    y = y + 36
+
+    -- Weather
+    local weatherLabel = Instance.new("TextLabel")
+    weatherLabel.Size = UDim2.new(1, 0, 0, 28)
+    weatherLabel.Position = UDim2.new(0, 0, 0, y)
+    weatherLabel.BackgroundTransparency = 1
+    weatherLabel.Text = getText("weather")
+    weatherLabel.TextColor3 = Color3.new(0.9, 0.9, 1)
+    weatherLabel.Font = Enum.Font.GothamBold
+    weatherLabel.TextSize = 14
+    weatherLabel.TextXAlignment = Enum.TextXAlignment.Left
+    weatherLabel.Parent = parent
+    y = y + 32
+
+    local weatherRow = Instance.new("Frame")
+    weatherRow.Size = UDim2.new(1, -5, 0, 30)
+    weatherRow.Position = UDim2.new(0, 2, 0, y)
+    weatherRow.BackgroundTransparency = 1
+    weatherRow.Parent = parent
+    local weatherPresetsList = {{"Clear", "Ясно"}, {"Rain", "Дождь"}, {"Foggy", "Туман"}}
+    for i, preset in ipairs(weatherPresetsList) do
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0.30, 0, 1, 0)
+        b.Position = UDim2.new(0.02 + (0.30 + 0.02) * (i-1), 0, 0, 0)
+        b.Text = preset[2]
+        b.TextColor3 = Color3.new(1, 1, 1)
+        b.BackgroundColor3 = (weatherPreset == preset[1]) and Color3.fromRGB(70, 200, 70) or Color3.fromRGB(60, 60, 80)
+        b.Font = Enum.Font.Gotham
+        b.TextSize = 9
+        b.Parent = weatherRow
+        Instance.new("UICorner").Parent = b
+        b.MouseButton1Click:Connect(function()
+            weatherPreset = preset[1]
+            applyWeather(preset[1])
+            for _, btn in ipairs(weatherRow:GetChildren()) do
+                if btn:IsA("TextButton") then
+                    btn.BackgroundColor3 = (btn.Text == preset[2]) and Color3.fromRGB(70, 200, 70) or Color3.fromRGB(60, 60, 80)
+                end
+            end
+        end)
+    end
+    y = y + 36
+
+    -- Time
+    createNumberRow(parent, getText("time"), y, 0, 24, 0.5, timeOfDay, "number", function(v)
+        timeOfDay = v
+        applyTimeOfDay(v)
+    end)
+    y = y + 38
+
+    -- Color
+    local colorLabel = Instance.new("TextLabel")
+    colorLabel.Size = UDim2.new(1, 0, 0, 28)
+    colorLabel.Position = UDim2.new(0, 0, 0, y)
+    colorLabel.BackgroundTransparency = 1
+    colorLabel.Text = getText("charColor")
+    colorLabel.TextColor3 = Color3.new(0.9, 0.9, 1)
+    colorLabel.Font = Enum.Font.GothamBold
+    colorLabel.TextSize = 14
+    colorLabel.TextXAlignment = Enum.TextXAlignment.Left
+    colorLabel.Parent = parent
+    y = y + 32
+
+    local colorRow = Instance.new("Frame")
+    colorRow.Size = UDim2.new(1, -5, 0, 30)
+    colorRow.Position = UDim2.new(0, 2, 0, y)
+    colorRow.BackgroundTransparency = 1
+    colorRow.Parent = parent
+    local colorOptions = {
+        {Color3.new(1,1,1), "Белый"},
+        {Color3.new(1,0,0), "Красный"},
+        {Color3.new(0,1,0), "Зелёный"},
+        {Color3.new(0,0,1), "Синий"},
+        {Color3.new(1,1,0), "Жёлтый"},
+        {Color3.new(1,0,1), "Фиолет"}
+    }
+    local cEn = {"White","Red","Green","Blue","Yellow","Purple"}
+    for i, col in ipairs(colorOptions) do
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0.13, 0, 0.8, 0)
+        b.Position = UDim2.new(0.02 + (0.13+0.02)*(i-1), 0, 0.1, 0)
+        b.BackgroundColor3 = col[1]
+        b.Text = (menuLanguage == "ru") and col[2] or cEn[i]
+        b.TextColor3 = (col[1] == Color3.new(1,1,1)) and Color3.new(0.2,0.2,0.2) or Color3.new(1,1,1)
+        b.Font = Enum.Font.Gotham
+        b.TextSize = 8
+        b.Parent = colorRow
+        Instance.new("UICorner").Parent = b
+        b.MouseButton1Click:Connect(function()
+            applyCharacterColor(col[1])
+            for _, btn in ipairs(colorRow:GetChildren()) do
+                if btn:IsA("TextButton") then
+                    btn.BackgroundTransparency = (btn.BackgroundColor3 == col[1]) and 0.3 or 0
+                end
+            end
+        end)
+    end
+    y = y + 36
+
+    createToggleRow(parent, getText("glow"), y, glowEnabled, function(state)
+        glowEnabled = state
+        updateGlow()
+    end)
+    y = y + 38
+    return y
+end)
+
+-- ===== COMBAT =====
+addToContainer("Combat", function(parent, y)
+    -- Режимы
+    local modeLabel = Instance.new("TextLabel")
+    modeLabel.Size = UDim2.new(1, 0, 0, 28)
+    modeLabel.Position = UDim2.new(0, 0, 0, y)
+    modeLabel.BackgroundTransparency = 1
+    modeLabel.Text = getText("combatMode")
+    modeLabel.TextColor3 = Color3.new(0.9, 0.9, 1)
+    modeLabel.Font = Enum.Font.GothamBold
+    modeLabel.TextSize = 14
+    modeLabel.Parent = parent
+    y = y + 32
+
+    local modeRow = Instance.new("Frame")
+    modeRow.Size = UDim2.new(1, -5, 0, 30)
+    modeRow.Position = UDim2.new(0, 2, 0, y)
+    modeRow.BackgroundTransparency = 1
+    modeRow.Parent = parent
+    local function createModeButton(text, color, xPos)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0.30, 0, 1, 0)
+        btn.Position = UDim2.new(xPos, 0, 0, 0)
+        btn.Text = text
+        btn.TextColor3 = Color3.new(1, 1, 1)
+        btn.BackgroundColor3 = color
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 13
+        btn.Parent = modeRow
+        Instance.new("UICorner").Parent = btn
+        return btn
+    end
+    local btnSheriff = createModeButton(getText("sheriff"), Color3.fromRGB(0, 100, 255), 0.02)
+    local btnMurder = createModeButton(getText("murder"), Color3.fromRGB(255, 0, 0), 0.35)
+    local btnInnocent = createModeButton(getText("innocent"), Color3.fromRGB(0, 200, 0), 0.68)
+    y = y + 36
+
+    -- Контейнеры подрежимов
+    local function createSubModeContainer()
+        local sub = Instance.new("Frame")
+        sub.Size = UDim2.new(1, 0, 0, 0)
+        sub.BackgroundTransparency = 1
+        sub.Parent = parent
+        return sub
+    end
+    local sheriffMode = createSubModeContainer()
+    local murderMode = createSubModeContainer()
+    local innocentMode = createSubModeContainer()
+    sheriffMode.Visible = true
+    murderMode.Visible = false
+    innocentMode.Visible = false
+
+    local function setCombatMode(mode)
+        sheriffMode.Visible = (mode == "Sheriff")
+        murderMode.Visible = (mode == "Murder")
+        innocentMode.Visible = (mode == "Innocent")
+        btnSheriff.BackgroundColor3 = (mode == "Sheriff") and Color3.fromRGB(50, 150, 255) or Color3.fromRGB(0, 100, 255)
+        btnMurder.BackgroundColor3 = (mode == "Murder") and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(255, 0, 0)
+        btnInnocent.BackgroundColor3 = (mode == "Innocent") and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(0, 200, 0)
+    end
+    btnSheriff.MouseButton1Click:Connect(function() setCombatMode("Sheriff") end)
+    btnMurder.MouseButton1Click:Connect(function() setCombatMode("Murder") end)
+    btnInnocent.MouseButton1Click:Connect(function() setCombatMode("Innocent") end)
+    setCombatMode("Sheriff")
+
+    -- Sheriff Mode
+    local shY = 5
+    local function addSheriffRow(builder)
+        local row = builder(sheriffMode, shY)
+        shY = row or shY
+        shY = shY + 38
+    end
+    addSheriffRow(function(p, y) createToggleRow(p, getText("aimbot"), y, false, function(s) sheriffAimbot = s end); return y end)
+    addSheriffRow(function(p, y) createNumberRow(p, getText("aimbotFOV"), y, 1, 180, 1, sheriffFOV, "integer", function(v) sheriffFOV = v end); return y end)
+    addSheriffRow(function(p, y) createNumberRow(p, getText("aimbotSmooth"), y, 1, 20, 1, sheriffSmoothness, "integer", function(v) sheriffSmoothness = v end); return y end)
+    addSheriffRow(function(p, y) createToggleRow(p, getText("silentAim"), y, false, function(s) sheriffSilent = s end); return y end)
+    addSheriffRow(function(p, y) createToggleRow(p, getText("triggerBot"), y, false, function(s) sheriffTrigger = s end); return y end)
+    addSheriffRow(function(p, y) createToggleRow(p, getText("autoKill"), y, false, function(s) sheriffAutoKill = s end); return y end)
+    addSheriffRow(function(p, y) createToggleRow(p, getText("wallHack"), y, false, function(s) sheriffWallHack = s; if s then refreshAllPlayers() else for p,h in pairs(playerHighlights) do h:Destroy(); playerHighlights[p]=nil end end end); return y end)
+    addSheriffRow(function(p, y) createToggleRow(p, getText("autoShootMurder"), y, false, function(s) sheriffAutoShootMurder = s end); return y end)
+    addSheriffRow(function(p, y) createButton(p, getText("flingMurder"), y, function() local t=findPlayerByRole("Murder") if t then flingPlayer(t, Vector3.new(0, 100, 0)) end end); return y end)
+    sheriffMode.Size = UDim2.new(1, 0, 0, shY + 20)
+
+    -- Murder Mode
+    local mY = 5
+    local function addMurderRow(builder)
+        local row = builder(murderMode, mY)
+        mY = row or mY
+        mY = mY + 38
+    end
+    addMurderRow(function(p, y) createToggleRow(p, getText("autoKillSheriff"), y, false, function(s) murderAutoKillSheriff = s end); return y end)
+    addMurderRow(function(p, y) createButton(p, getText("killAll"), y, function() killAllPlayers() end); return y end)
+    addMurderRow(function(p, y) createToggleRow(p, getText("autoKillAll"), y, false, function(s) murderAutoKillAll = s end); return y end)
+    addMurderRow(function(p, y) createButton(p, getText("flingSheriff"), y, function() local t=findPlayerByRole("Sheriff") if t then flingPlayer(t, Vector3.new(0, 100, 0)) end end); return y end)
+    addMurderRow(function(p, y) createButton(p, getText("flingAll"), y, function() flingAllPlayers(Vector3.new(0, 100, 0)) end); return y end)
+    addMurderRow(function(p, y) createToggleRow(p, getText("knifeAimbot"), y, false, function(s) murderKnifeAimbot = s end); return y end)
+    addMurderRow(function(p, y) createToggleRow(p, getText("knifeAnim"), y, false, function(s) murderKnifeAnim = s end); return y end)
+    addMurderRow(function(p, y) createToggleRow(p, getText("fakeSheriff"), y, false, function(s) murderFakeSheriff = s end); return y end)
+    addMurderRow(function(p, y) 
+        local dd = createDropdown(p, getText("killSelected"), y, getOtherPlayers(), "Выберите", function(pl) murderSelectedPlayer = pl; killPlayer(pl) end)
+        return y
+    end)
+    murderMode.Size = UDim2.new(1, 0, 0, mY + 20)
+
+    -- Innocent Mode
+    local iY = 5
+    local function addInnocentRow(builder)
+        local row = builder(innocentMode, iY)
+        iY = row or iY
+        iY = iY + 38
+    end
+    addInnocentRow(function(p, y) createToggleRow(p, getText("godMode"), y, false, function(s) innocentGodMode = s; applyPlayerSettings() end); return y end)
+    innocentMode.Size = UDim2.new(1, 0, 0, iY + 20)
+
+    -- Возвращаем общую высоту (максимальную)
+    return y + 20
+end)
+
+-- ===== TELEPORT =====
+addToContainer("Teleport", function(parent, y)
+    -- Tp to player
+    local dd = createDropdown(parent, getText("tpTo"), y, getOtherPlayers(), "Выберите игрока", function(pl)
+        teleportToPlayer(pl)
+    end)
+    y = y + 38
+
+    createButton(parent, getText("tpMurder"), y, function()
+        local target = findPlayerByRole("Murder")
+        if target then teleportToPlayer(target) end
+    end)
+    y = y + 38
+
+    createButton(parent, getText("tpSheriff"), y, function()
+        local target = findPlayerByRole("Sheriff")
+        if target then teleportToPlayer(target) end
+    end)
+    y = y + 38
+
+    createButton(parent, getText("tpLobby"), y, function()
+        teleportToLobby()
+    end)
+    y = y + 38
+
+    createButton(parent, getText("tpMap"), y, function()
+        teleportToMap()
+    end)
+    y = y + 38
+    return y
+end)
+
+-- ===== FLING =====
+addToContainer("Fling", function(parent, y)
+    -- Fling player
+    local dd = createDropdown(parent, getText("fling"), y, getOtherPlayers(), "Выберите игрока", function(pl)
+        flingPlayer(pl, Vector3.new(0, 150, 0))
+    end)
+    y = y + 38
+
+    createButton(parent, getText("flingMurder2"), y, function()
+        local target = findPlayerByRole("Murder")
+        if target then flingPlayer(target, Vector3.new(0, 150, 0)) end
+    end)
+    y = y + 38
+
+    createButton(parent, getText("flingSheriff2"), y, function()
+        local target = findPlayerByRole("Sheriff")
+        if target then flingPlayer(target, Vector3.new(0, 150, 0)) end
+    end)
+    y = y + 38
+
+    createButton(parent, getText("flingAll2"), y, function()
+        flingAllPlayers(Vector3.new(0, 150, 0))
+    end)
+    y = y + 38
+    return y
+end)
+
+-- ===== SETTINGS =====
+addToContainer("Settings", function(parent, y)
+    -- Menu Color
+    local colorLabel = Instance.new("TextLabel")
+    colorLabel.Size = UDim2.new(1, 0, 0, 28)
+    colorLabel.Position = UDim2.new(0, 0, 0, y)
+    colorLabel.BackgroundTransparency = 1
+    colorLabel.Text = getText("settingsColor")
+    colorLabel.TextColor3 = Color3.new(0.9, 0.9, 1)
+    colorLabel.Font = Enum.Font.GothamBold
+    colorLabel.TextSize = 14
+    colorLabel.TextXAlignment = Enum.TextXAlignment.Left
+    colorLabel.Parent = parent
+    y = y + 32
+
+    local colorRow = Instance.new("Frame")
+    colorRow.Size = UDim2.new(1, -5, 0, 30)
+    colorRow.Position = UDim2.new(0, 2, 0, y)
+    colorRow.BackgroundTransparency = 1
+    colorRow.Parent = parent
+    local colors = {
+        {Color3.fromRGB(25,25,40), "Тёмный"},
+        {Color3.fromRGB(30,30,50), "Синий"},
+        {Color3.fromRGB(50,20,60), "Фиолет"},
+        {Color3.fromRGB(20,50,50), "Зелёный"},
+        {Color3.fromRGB(50,30,30), "Красный"},
+        {Color3.fromRGB(40,40,40), "Серый"}
+    }
+    local cEn = {"Dark","Blue","Purple","Green","Red","Gray"}
+    for i, col in ipairs(colors) do
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0.15, 0, 0.8, 0)
+        b.Position = UDim2.new(0.02 + (0.15+0.02)*(i-1), 0, 0.1, 0)
+        b.BackgroundColor3 = col[1]
+        b.Text = (menuLanguage == "ru") and col[2] or cEn[i]
+        b.TextColor3 = Color3.new(1,1,1)
+        b.Font = Enum.Font.Gotham
+        b.TextSize = 8
+        b.Parent = colorRow
+        Instance.new("UICorner").Parent = b
+        b.MouseButton1Click:Connect(function()
+            menuColor = col[1]
+            frame.BackgroundColor3 = col[1]
+            iconButton.BackgroundColor3 = col[1]
+        end)
+    end
+    y = y + 36
+
+    -- Language
+    local langLabel = Instance.new("TextLabel")
+    langLabel.Size = UDim2.new(1, 0, 0, 28)
+    langLabel.Position = UDim2.new(0, 0, 0, y)
+    langLabel.BackgroundTransparency = 1
+    langLabel.Text = getText("settingsLang")
+    langLabel.TextColor3 = Color3.new(0.9, 0.9, 1)
+    langLabel.Font = Enum.Font.GothamBold
+    langLabel.TextSize = 14
+    langLabel.TextXAlignment = Enum.TextXAlignment.Left
+    langLabel.Parent = parent
+    y = y + 32
+
+    local langRow = Instance.new("Frame")
+    langRow.Size = UDim2.new(1, -5, 0, 30)
+    langRow.Position = UDim2.new(0, 2, 0, y)
+    langRow.BackgroundTransparency = 1
+    langRow.Parent = parent
+    local function createLangButton(text, code, x)
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0.2, 0, 0.8, 0)
+        b.Position = UDim2.new(x, 0, 0.1, 0)
+        b.Text = text
+        b.TextColor3 = Color3.new(1,1,1)
+        b.BackgroundColor3 = (menuLanguage == code) and Color3.fromRGB(70,200,70) or Color3.fromRGB(60,60,80)
+        b.Font = Enum.Font.GothamBold
+        b.TextSize = 12
+        b.Parent = langRow
+        Instance.new("UICorner").Parent = b
+        b.MouseButton1Click:Connect(function()
+            menuLanguage = code
+            -- обновить тексты (можно перезагрузить интерфейс, но для краткости оставлю)
+        end)
+        return b
+    end
+    createLangButton("Русский", "ru", 0.02)
+    createLangButton("English", "en", 0.24)
+    y = y + 36
+
+    -- Menu Size
+    local sizeLabel = Instance.new("TextLabel")
+    sizeLabel.Size = UDim2.new(1, 0, 0, 28)
+    sizeLabel.Position = UDim2.new(0, 0, 0, y)
+    sizeLabel.BackgroundTransparency = 1
+    sizeLabel.Text = getText("settingsSize")
+    sizeLabel.TextColor3 = Color3.new(0.9, 0.9, 1)
+    sizeLabel.Font = Enum.Font.GothamBold
+    sizeLabel.TextSize = 14
+    sizeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    sizeLabel.Parent = parent
+    y = y + 32
+
+    local sizeRow = Instance.new("Frame")
+    sizeRow.Size = UDim2.new(1, -5, 0, 30)
+    sizeRow.Position = UDim2.new(0, 2, 0, y)
+    sizeRow.BackgroundTransparency = 1
+    sizeRow.Parent = parent
+    local sizeMinus = Instance.new("TextButton")
+    sizeMinus.Size = UDim2.new(0.12, 0, 0.8, 0)
+    sizeMinus.Position = UDim2.new(0.02, 0, 0.1, 0)
+    sizeMinus.Text = getText("decrease")
+    sizeMinus.TextColor3 = Color3.new(1,1,1)
+    sizeMinus.BackgroundColor3 = Color3.fromRGB(60,60,80)
+    sizeMinus.Font = Enum.Font.GothamBold
+    sizeMinus.TextSize = 16
+    sizeMinus.Parent = sizeRow
+    Instance.new("UICorner").Parent = sizeMinus
+    local sizeDisplay = Instance.new("TextLabel")
+    sizeDisplay.Size = UDim2.new(0.2, 0, 0.8, 0)
+    sizeDisplay.Position = UDim2.new(0.16, 0, 0.1, 0)
+    sizeDisplay.BackgroundTransparency = 1
+    sizeDisplay.Text = "100%"
+    sizeDisplay.TextColor3 = Color3.new(1,1,1)
+    sizeDisplay.Font = Enum.Font.Gotham
+    sizeDisplay.TextSize = 13
+    sizeDisplay.Parent = sizeRow
+    local sizePlus = Instance.new("TextButton")
+    sizePlus.Size = UDim2.new(0.12, 0, 0.8, 0)
+    sizePlus.Position = UDim2.new(0.38, 0, 0.1, 0)
+    sizePlus.Text = getText("increase")
+    sizePlus.TextColor3 = Color3.new(1,1,1)
+    sizePlus.BackgroundColor3 = Color3.fromRGB(60,60,80)
+    sizePlus.Font = Enum.Font.GothamBold
+    sizePlus.TextSize = 16
+    sizePlus.Parent = sizeRow
+    Instance.new("UICorner").Parent = sizePlus
+    local function updateMenuScale(newScale)
+        newScale = math.clamp(newScale, 0.6, 1.5)
+        menuScale = newScale
+        frame.Size = UDim2.new(0, 480 * menuScale, 0, 580 * menuScale)
+        frame.Position = UDim2.new(0.5, -240 * menuScale, 0.5, -290 * menuScale)
+        sizeDisplay.Text = string.format("%.0f%%", menuScale * 100)
+    end
+    sizeMinus.MouseButton1Click:Connect(function() updateMenuScale(menuScale - 0.1) end)
+    sizePlus.MouseButton1Click:Connect(function() updateMenuScale(menuScale + 0.1) end)
+    y = y + 36
+    return y
+end)
+
+-- ===== BIO =====
+addToContainer("Bio", function(parent, y)
+    local bioTitle = Instance.new("TextLabel")
+    bioTitle.Size = UDim2.new(1, 0, 0, 30)
+    bioTitle.Position = UDim2.new(0, 0, 0, y)
+    bioTitle.BackgroundTransparency = 1
+    bioTitle.Text = getText("bioTitle")
+    bioTitle.TextColor3 = Color3.new(0.9, 0.8, 1)
+    bioTitle.Font = Enum.Font.GothamBold
+    bioTitle.TextSize = 18
+    bioTitle.TextXAlignment = Enum.TextXAlignment.Center
+    bioTitle.Parent = parent
+    y = y + 36
+
+    local function createBioLabel(text, yPos, color)
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 0, 28)
+        label.Position = UDim2.new(0, 0, 0, yPos)
+        label.BackgroundTransparency = 1
+        label.Text = text
+        label.TextColor3 = color or Color3.new(1,1,1)
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 15
+        label.TextXAlignment = Enum.TextXAlignment.Center
+        label.Parent = parent
+        return label
+    end
+    createBioLabel(getText("tg"), y, Color3.new(0.7,1,0.7))
+    y = y + 34
+    createBioLabel(getText("tgChannel"), y, Color3.new(0.6,0.8,1))
+    y = y + 34
+    createBioLabel(getText("discord"), y, Color3.new(0.8,0.6,1))
+    y = y + 34
+    return y
+end)
+
+-- ===== ЛОГИКА ВКЛАДОК =====
+function setActiveTab(tabId)
+    activeTab = tabId
+    for id, data in pairs(tabContainers) do
+        data.container.Visible = (id == tabId)
+    end
+    for id, btn in pairs(tabButtons) do
+        if id == tabId then
+            btn.BackgroundColor3 = Color3.fromRGB(70, 60, 130)
+            btn.TextColor3 = Color3.new(1, 1, 1)
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+            btn.TextColor3 = Color3.new(0.8, 0.8, 0.9)
+        end
+    end
+end
+
+-- ===== СОХРАНЕНИЕ ПОЗИЦИЙ ЛОББИ И КАРТЫ =====
+local function savePositions()
+    -- Лобби: сохраняем текущую позицию при старте (или можно найти спавн)
+    local myChar = LocalPlayer.Character
+    if myChar then
+        local root = myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Torso")
+        if root then
+            lobbyPosition = root.CFrame
+        end
+    end
+    -- Карта: ищем объект "Map" или "Baseplate"
+    local map = workspace:FindFirstChild("Map") or workspace:FindFirstChild("Baseplate")
+    if map and map:IsA("BasePart") then
+        mapPosition = map.CFrame
+    else
+        -- Попробуем найти любую крупную часть
+        for _, part in ipairs(workspace:GetDescendants()) do
+            if part:IsA("BasePart") and part.Size.Magnitude > 20 then
+                mapPosition = part.CFrame
+                break
+            end
+        end
+    end
+end
+
+-- ===== СВОРАЧИВАНИЕ =====
+closeBtn.MouseButton1Click:Connect(function()
+    frame.Visible = false
+    iconButton.Visible = true
+end)
+iconButton.MouseButton1Click:Connect(function()
+    iconButton.Visible = false
+    frame.Visible = true
+end)
+
+-- ===== НАДПИСЬ АВТОРА =====
+local creditLabel = Instance.new("TextLabel")
+creditLabel.Size = UDim2.new(1, -130, 0, 20)
+creditLabel.Position = UDim2.new(0, 120, 1, -24)
+creditLabel.BackgroundTransparency = 1
+creditLabel.Text = getText("credit")
+creditLabel.TextColor3 = Color3.fromRGB(150, 140, 180)
+creditLabel.Font = Enum.Font.Gotham
+creditLabel.TextSize = 12
+creditLabel.TextXAlignment = Enum.TextXAlignment.Center
+creditLabel.Parent = frame
+
+-- ===== ОБРАБОТЧИКИ СОБЫТИЙ =====
+LocalPlayer.CharacterAdded:Connect(function(character)
+    task.wait(0.3)
+    applyPlayerSettings()
+    applyCharacterColor(characterColor)
+    updateGlow()
+    setupInvisibilityTracker(character)
+    if flyEnabled then startFly() end
+    savePositions()
+end)
+
+if LocalPlayer.Character then
+    setupInvisibilityTracker(LocalPlayer.Character)
+    savePositions()
+end
+
+Players.PlayerAdded:Connect(function(p)
+    p.CharacterAdded:Connect(function()
+        task.wait(0.3)
+        updatePlayerHighlight(p)
+    end)
+    if espPlayersEnabled then
+        task.wait(0.5)
+        updatePlayerHighlight(p)
+    end
+end)
+Players.PlayerRemoving:Connect(function(p)
+    if playerHighlights[p] then
+        playerHighlights[p]:Destroy()
+        playerHighlights[p] = nil
+    end
+end)
+
+workspace.DescendantAdded:Connect(function(o)
+    if espGunEnabled then updateGunHighlight(o) end
+end)
+
+-- Запуск Combat Loop (аимбот и триггеры)
+local combatLoop = RunService.Heartbeat:Connect(function()
+    -- Sheriff Aimbot
+    if sheriffAimbot then
+        local target = findPlayerByRole("Murder")
+        if target then aimbot(target) end
+    end
+    -- Sheriff Trigger Bot
+    if sheriffTrigger then
+        local target = findPlayerByRole("Murder")
+        if target then
+            local camera = workspace.CurrentCamera
+            if camera then
+                local char = target.Character
+                if char then
+                    local head = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+                    if head then
+                        local pos, onScreen = camera:WorldToScreenPoint(head.Position)
+                        if onScreen then
+                            local screenSize = camera.ViewportSize
+                            local center = Vector2.new(screenSize.X/2, screenSize.Y/2)
+                            if (Vector2.new(pos.X, pos.Y) - center).Magnitude < 50 then
+                                triggerBot()
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    -- Sheriff Auto Kill
+    if sheriffAutoKill then
+        local target = findPlayerByRole("Murder")
+        if target then killPlayer(target) end
+    end
+    -- Sheriff Auto Shoot Murder
+    if sheriffAutoShootMurder then
+        local target = findPlayerByRole("Murder")
+        if target then
+            local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+            if mouse then mouse:Button1Down(); task.wait(0.05); mouse:Button1Up() end
+        end
+    end
+    -- Murder Auto Kill Sheriff
+    if murderAutoKillSheriff then
+        local target = findPlayerByRole("Sheriff")
+        if target then killPlayer(target) end
+    end
+    -- Murder Auto Kill All
+    if murderAutoKillAll then
+        for _, p in ipairs(getOtherPlayers()) do killPlayer(p) end
+    end
+end)
+
+-- Остановка цикла при выключении скрипта
+task.spawn(function()
+    while wait(1) do
+        if not gui then combatLoop:Disconnect(); break end
+    end
+end)
+
+-- Применяем настройки при старте
+applySkybox(skyPreset)
+applyWeather(weatherPreset)
+applyTimeOfDay(timeOfDay)
+task.wait(0.5)
+applyPlayerSettings()
+applyCharacterColor(characterColor)
+updateGlow()
+
+print("SkyHub Premium загружен! By dont16383")
