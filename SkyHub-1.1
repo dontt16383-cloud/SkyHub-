@@ -1,4 +1,4 @@
--- SkyHub Premium (с Combat, AutoFarm, Troll) - ПОЛНАЯ ВЕРСИЯ
+-- SkyHub Premium (полный рабочий код)
 -- Автор: dont16383
 
 local Players = game:GetService("Players")
@@ -8,7 +8,7 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 
--- ===== ЗАГРУЗОЧНЫЙ ЭКРАН (без изменений) =====
+-- ===== ЗАГРУЗОЧНЫЙ ЭКРАН =====
 local loadGui = Instance.new("ScreenGui")
 loadGui.Name = "LoadGui"
 loadGui.Parent = game:GetService("CoreGui")
@@ -102,13 +102,13 @@ local flyPulse = 0
 local lobbyPosition = nil
 local mapPosition = nil
 
--- ===== ПЕРЕМЕННЫЕ ДЛЯ AUTOFARM =====
+-- AutoFarm
 local autoFarmEnabled = false
 local coinsFarmed = 0
 local farmConnection = nil
 local autoWinEnabled = false
 
--- ===== ПЕРЕМЕННЫЕ ДЛЯ TROLL =====
+-- Troll
 local headlessEnabled = false
 local korbloxEnabled = false
 local jerkEnabled = false
@@ -116,8 +116,8 @@ local jerkConnection = nil
 local animTrack = nil
 local soundObj = nil
 
--- ===== ПЕРЕМЕННЫЕ ДЛЯ COMBAT =====
-local combatMode = "Sheriff" -- "Sheriff", "Murder", "Innocent"
+-- Combat
+local combatMode = "Sheriff"
 local sheriffAimbot = false
 local sheriffFOV = 30
 local sheriffSmoothness = 5
@@ -134,7 +134,7 @@ local murderFakeSheriff = false
 local innocentGodMode = false
 local murderSelectedPlayer = nil
 
--- ===== ФУНКЦИЯ СОЗДАНИЯ ЛОГОТИПА =====
+-- ===== ФУНКЦИЯ ЛОГО =====
 local function createLogo(parent, size, position)
     local container = Instance.new("Frame")
     container.Size = size
@@ -448,7 +448,7 @@ local function scanExistingGuns()
     for _, o in ipairs(workspace:GetDescendants()) do updateGunHighlight(o) end
 end
 
--- ===== TELEPORT & FLING (используются также в Combat) =====
+-- ===== TELEPORT & FLING =====
 local function getOtherPlayers()
     local list = {}
     for _, p in ipairs(Players:GetPlayers()) do
@@ -526,7 +526,7 @@ local function flingAllPlayers(force)
     end
 end
 
--- ===== ФУНКЦИИ ДЛЯ COMBAT =====
+-- ===== COMBAT =====
 local function findClosestPlayer(roleFilter)
     local camera = workspace.CurrentCamera
     if not camera then return nil end
@@ -594,7 +594,7 @@ local function killAllPlayers()
     end
 end
 
--- ===== ФУНКЦИИ ДЛЯ AUTOFARM =====
+-- ===== AUTOFARM =====
 local function getClosestCoin()
     local char = LocalPlayer.Character
     if not char then return nil end
@@ -639,7 +639,7 @@ local function stopAutoFarm()
     if farmConnection then farmConnection:Disconnect(); farmConnection = nil end
 end
 
--- ===== ФУНКЦИИ ДЛЯ TROLL =====
+-- ===== TROLL =====
 local function playEmote(emoteName)
     local humanoid = getHumanoid()
     if humanoid then pcall(function() humanoid:PlayEmote(emoteName) end) end
@@ -723,7 +723,7 @@ local function playSong(songName)
     end
 end
 
--- ===== ЛОКАЛИЗАЦИЯ (добавлены тексты для Combat) =====
+-- ===== ЛОКАЛИЗАЦИЯ =====
 local texts = {
     ru = {
         title = "SkyHub",
@@ -1006,7 +1006,6 @@ buttonContainer.Size = UDim2.new(1, 0, 0, 0)
 buttonContainer.BackgroundTransparency = 1
 buttonContainer.Parent = scrollFrameSide
 
--- Список вкладок (добавлен Combat)
 local tabs = {
     {id = "Player", icon = "◉", textKey = "tabPlayer"},
     {id = "ESP", icon = "✦", textKey = "tabESP"},
@@ -1292,17 +1291,478 @@ local function addToContainer(tabId, builder)
     data.scroll.CanvasSize = UDim2.new(0, 0, 0, data.currentY + 20)
 end
 
--- ===== ЗАПОЛНЯЕМ ВКЛАДКИ (Player, ESP, Visual, Teleport, Fling, AutoFarm, Troll, Settings, Bio - как раньше) =====
--- Оставим их без изменений, они уже есть в коде, просто для краткости не буду переписывать.
--- Но я добавлю Combat в самом конце.
+-- ===== ЗАПОЛНЯЕМ ВСЕ ВКЛАДКИ =====
+-- Player
+addToContainer("Player", function(parent, y)
+    createNumberRow(parent, getText("walkSpeed"), y, 0, 100, 1, DEFAULT_WALK, "integer", function(v) currentWalk = v; applyPlayerSettings() end)
+    y = y + 38
+    createNumberRow(parent, getText("jumpPower"), y, 0, 200, 1, DEFAULT_JUMP, "integer", function(v) currentJump = v; applyPlayerSettings() end)
+    y = y + 38
+    createNumberRow(parent, getText("scale"), y, 0.1, 5, 0.05, DEFAULT_SCALE, "number", function(v) currentScale = v; applyPlayerSettings() end)
+    y = y + 38
+    createToggleRow(parent, getText("invisible"), y, DEFAULT_INVISIBLE, function(s) isInvisible = s; applyPlayerSettings() end)
+    y = y + 38
+    createToggleRow(parent, getText("fly"), y, false, function(s) flyEnabled = s; if s then startFly() else stopFly() end end)
+    y = y + 38
+    createNumberRow(parent, getText("flySpeed"), y, 1, 50, 0.5, flySpeed, "number", function(v) flySpeed = v end)
+    y = y + 38
+    createToggleRow(parent, getText("flyAnim"), y, false, function(s) flyAnimation = s end)
+    y = y + 38
+    createToggleRow(parent, getText("infinityJump"), y, false, function(s) infinityJump = s; applyPlayerSettings() end)
+    y = y + 38
+    createToggleRow(parent, getText("noclip"), y, false, function(s) noclipEnabled = s; updateNoclip() end)
+    y = y + 38
+    createButton(parent, getText("reset"), y, function()
+        currentWalk = DEFAULT_WALK; currentJump = DEFAULT_JUMP; currentScale = DEFAULT_SCALE; isInvisible = DEFAULT_INVISIBLE
+        flyEnabled = false; flySpeed = 16; flyAnimation = false; infinityJump = false; noclipEnabled = false
+        stopFly(); applyPlayerSettings(); updateNoclip()
+    end)
+    y = y + 38
+    return y
+end)
 
--- (Здесь код для Player, ESP, Visual, Teleport, Fling, AutoFarm, Troll, Settings, Bio)
--- Они такие же, как в предыдущей версии, я их не буду повторять в этом сообщении, чтобы не перегружать,
--- но они есть в полном коде, который я приложу.
+-- ESP
+addToContainer("ESP", function(parent, y)
+    createToggleRow(parent, getText("espPlayers"), y, false, function(s)
+        espPlayersEnabled = s
+        if s then refreshAllPlayers() else for p,h in pairs(playerHighlights) do h:Destroy(); playerHighlights[p]=nil end end
+    end)
+    y = y + 38
+    createToggleRow(parent, getText("espGun"), y, false, function(s)
+        espGunEnabled = s
+        if s then scanExistingGuns() else for o,h in pairs(gunHighlights) do h:Destroy(); gunHighlights[o]=nil end end
+    end)
+    y = y + 38
+    return y
+end)
 
--- ===== НОВАЯ ВКЛАДКА COMBAT =====
+-- Visual
+addToContainer("Visual", function(parent, y)
+    local skyLabel = Instance.new("TextLabel")
+    skyLabel.Size = UDim2.new(1, 0, 0, 28)
+    skyLabel.Position = UDim2.new(0, 0, 0, y)
+    skyLabel.BackgroundTransparency = 1
+    skyLabel.Text = getText("skybox")
+    skyLabel.TextColor3 = Color3.new(0.9,0.9,1)
+    skyLabel.Font = Enum.Font.GothamBold
+    skyLabel.TextSize = 14
+    skyLabel.TextXAlignment = Enum.TextXAlignment.Left
+    skyLabel.Parent = parent
+    y = y + 32
+    local skyRow = Instance.new("Frame")
+    skyRow.Size = UDim2.new(1, -5, 0, 30)
+    skyRow.Position = UDim2.new(0, 2, 0, y)
+    skyRow.BackgroundTransparency = 1
+    skyRow.Parent = parent
+    local presets = {{"Default","Стандарт"},{"Sunset","Закат"},{"Night","Ночь"},{"Space","Космос"}}
+    for i,p in ipairs(presets) do
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0.22, 0, 1, 0)
+        b.Position = UDim2.new(0.02 + (0.22+0.02)*(i-1), 0, 0, 0)
+        b.Text = p[2]
+        b.TextColor3 = Color3.new(1,1,1)
+        b.BackgroundColor3 = (skyPreset == p[1]) and Color3.fromRGB(70,200,70) or Color3.fromRGB(60,60,80)
+        b.Font = Enum.Font.Gotham
+        b.TextSize = 9
+        b.Parent = skyRow
+        Instance.new("UICorner").Parent = b
+        b.MouseButton1Click:Connect(function()
+            skyPreset = p[1]; applySkybox(p[1])
+            for _, btn in ipairs(skyRow:GetChildren()) do
+                if btn:IsA("TextButton") then
+                    btn.BackgroundColor3 = (btn.Text == p[2]) and Color3.fromRGB(70,200,70) or Color3.fromRGB(60,60,80)
+                end
+            end
+        end)
+    end
+    y = y + 36
+
+    local weatherLabel = Instance.new("TextLabel")
+    weatherLabel.Size = UDim2.new(1, 0, 0, 28)
+    weatherLabel.Position = UDim2.new(0, 0, 0, y)
+    weatherLabel.BackgroundTransparency = 1
+    weatherLabel.Text = getText("weather")
+    weatherLabel.TextColor3 = Color3.new(0.9,0.9,1)
+    weatherLabel.Font = Enum.Font.GothamBold
+    weatherLabel.TextSize = 14
+    weatherLabel.TextXAlignment = Enum.TextXAlignment.Left
+    weatherLabel.Parent = parent
+    y = y + 32
+    local weatherRow = Instance.new("Frame")
+    weatherRow.Size = UDim2.new(1, -5, 0, 30)
+    weatherRow.Position = UDim2.new(0, 2, 0, y)
+    weatherRow.BackgroundTransparency = 1
+    weatherRow.Parent = parent
+    local wpresets = {{"Clear","Ясно"},{"Rain","Дождь"},{"Foggy","Туман"}}
+    for i,p in ipairs(wpresets) do
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0.30, 0, 1, 0)
+        b.Position = UDim2.new(0.02 + (0.30+0.02)*(i-1), 0, 0, 0)
+        b.Text = p[2]
+        b.TextColor3 = Color3.new(1,1,1)
+        b.BackgroundColor3 = (weatherPreset == p[1]) and Color3.fromRGB(70,200,70) or Color3.fromRGB(60,60,80)
+        b.Font = Enum.Font.Gotham
+        b.TextSize = 9
+        b.Parent = weatherRow
+        Instance.new("UICorner").Parent = b
+        b.MouseButton1Click:Connect(function()
+            weatherPreset = p[1]; applyWeather(p[1])
+            for _, btn in ipairs(weatherRow:GetChildren()) do
+                if btn:IsA("TextButton") then
+                    btn.BackgroundColor3 = (btn.Text == p[2]) and Color3.fromRGB(70,200,70) or Color3.fromRGB(60,60,80)
+                end
+            end
+        end)
+    end
+    y = y + 36
+
+    createNumberRow(parent, getText("time"), y, 0, 24, 0.5, timeOfDay, "number", function(v) timeOfDay = v; applyTimeOfDay(v) end)
+    y = y + 38
+
+    local colorLabel = Instance.new("TextLabel")
+    colorLabel.Size = UDim2.new(1, 0, 0, 28)
+    colorLabel.Position = UDim2.new(0, 0, 0, y)
+    colorLabel.BackgroundTransparency = 1
+    colorLabel.Text = getText("charColor")
+    colorLabel.TextColor3 = Color3.new(0.9,0.9,1)
+    colorLabel.Font = Enum.Font.GothamBold
+    colorLabel.TextSize = 14
+    colorLabel.TextXAlignment = Enum.TextXAlignment.Left
+    colorLabel.Parent = parent
+    y = y + 32
+    local colorRow = Instance.new("Frame")
+    colorRow.Size = UDim2.new(1, -5, 0, 30)
+    colorRow.Position = UDim2.new(0, 2, 0, y)
+    colorRow.BackgroundTransparency = 1
+    colorRow.Parent = parent
+    local cols = {
+        {Color3.new(1,1,1), "Белый"},
+        {Color3.new(1,0,0), "Красный"},
+        {Color3.new(0,1,0), "Зелёный"},
+        {Color3.new(0,0,1), "Синий"},
+        {Color3.new(1,1,0), "Жёлтый"},
+        {Color3.new(1,0,1), "Фиолет"}
+    }
+    for i,c in ipairs(cols) do
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0.13, 0, 0.8, 0)
+        b.Position = UDim2.new(0.02 + (0.13+0.02)*(i-1), 0, 0.1, 0)
+        b.BackgroundColor3 = c[1]
+        b.Text = (menuLanguage == "ru") and c[2] or c[2]
+        b.TextColor3 = (c[1] == Color3.new(1,1,1)) and Color3.new(0.2,0.2,0.2) or Color3.new(1,1,1)
+        b.Font = Enum.Font.Gotham
+        b.TextSize = 8
+        b.Parent = colorRow
+        Instance.new("UICorner").Parent = b
+        b.MouseButton1Click:Connect(function()
+            applyCharacterColor(c[1])
+            for _, btn in ipairs(colorRow:GetChildren()) do
+                if btn:IsA("TextButton") then
+                    btn.BackgroundTransparency = (btn.BackgroundColor3 == c[1]) and 0.3 or 0
+                end
+            end
+        end)
+    end
+    y = y + 36
+
+    createToggleRow(parent, getText("glow"), y, glowEnabled, function(s) glowEnabled = s; updateGlow() end)
+    y = y + 38
+    return y
+end)
+
+-- Teleport
+addToContainer("Teleport", function(parent, y)
+    createDropdown(parent, getText("tpTo"), y, getOtherPlayers(), "Выберите игрока", function(pl)
+        teleportToPlayer(pl)
+    end)
+    y = y + 38
+    createButton(parent, getText("tpMurder"), y, function()
+        local t = findPlayerByRole("Murder")
+        if t then teleportToPlayer(t) end
+    end)
+    y = y + 38
+    createButton(parent, getText("tpSheriff"), y, function()
+        local t = findPlayerByRole("Sheriff")
+        if t then teleportToPlayer(t) end
+    end)
+    y = y + 38
+    createButton(parent, getText("tpLobby"), y, function()
+        teleportToLobby()
+    end)
+    y = y + 38
+    createButton(parent, getText("tpMap"), y, function()
+        teleportToMap()
+    end)
+    y = y + 38
+    return y
+end)
+
+-- Fling
+addToContainer("Fling", function(parent, y)
+    createDropdown(parent, getText("fling"), y, getOtherPlayers(), "Выберите игрока", function(pl)
+        flingPlayer(pl, Vector3.new(0, 150, 0))
+    end)
+    y = y + 38
+    createButton(parent, getText("flingMurder"), y, function()
+        local t = findPlayerByRole("Murder")
+        if t then flingPlayer(t, Vector3.new(0, 150, 0))
+        else print("Убийца не найден") end
+    end)
+    y = y + 38
+    createButton(parent, getText("flingSheriff"), y, function()
+        local t = findPlayerByRole("Sheriff")
+        if t then flingPlayer(t, Vector3.new(0, 150, 0))
+        else print("Шериф не найден") end
+    end)
+    y = y + 38
+    createButton(parent, getText("flingAll"), y, function()
+        flingAllPlayers(Vector3.new(0, 150, 0))
+    end)
+    y = y + 38
+    return y
+end)
+
+-- AutoFarm
+addToContainer("AutoFarm", function(parent, y)
+    createToggleRow(parent, getText("autoFarmCoins"), y, false, function(s)
+        autoFarmEnabled = s
+        if s then startAutoFarm() else stopAutoFarm() end
+    end)
+    y = y + 38
+    local coinsLabel = Instance.new("TextLabel")
+    coinsLabel.Size = UDim2.new(1, 0, 0, 28)
+    coinsLabel.Position = UDim2.new(0, 0, 0, y)
+    coinsLabel.BackgroundTransparency = 1
+    coinsLabel.Text = getText("coinsEarned") .. "0"
+    coinsLabel.TextColor3 = Color3.new(0.9,0.9,1)
+    coinsLabel.Font = Enum.Font.Gotham
+    coinsLabel.TextSize = 14
+    coinsLabel.Parent = parent
+    local coinsUpdater = RunService.Heartbeat:Connect(function()
+        if coinsLabel then coinsLabel.Text = getText("coinsEarned") .. tostring(coinsFarmed) end
+    end)
+    parent._coinsUpdater = coinsUpdater
+    y = y + 34
+    createToggleRow(parent, getText("autoWin"), y, false, function(s)
+        autoWinEnabled = s
+        if s then
+            isInvisible = true
+            noclipEnabled = true
+            applyPlayerSettings()
+            updateNoclip()
+        else
+            isInvisible = DEFAULT_INVISIBLE
+            noclipEnabled = false
+            applyPlayerSettings()
+            updateNoclip()
+        end
+    end)
+    y = y + 38
+    return y
+end)
+
+-- Troll
+addToContainer("Troll", function(parent, y)
+    local emotesList = {"Wave", "Point", "Cheer", "Dance", "Laugh", "Shrug", "Blush", "Pose"}
+    createDropdown(parent, getText("emotes"), y, emotesList, "Выберите", function(emote)
+        playEmote(emote)
+    end)
+    y = y + 38
+    local animList = {"T-Pose", "Zombie", "Robot", "Floss", "Sit", "Point"}
+    createDropdown(parent, getText("animations"), y, animList, "Выберите", function(anim)
+        playAnimation(anim)
+    end)
+    y = y + 38
+    createToggleRow(parent, getText("korblox"), y, false, function(s) toggleKorblox(s) end)
+    y = y + 38
+    createToggleRow(parent, getText("headless"), y, false, function(s) toggleHeadless(s) end)
+    y = y + 38
+    createToggleRow(parent, getText("jerk"), y, false, function(s) toggleJerk(s) end)
+    y = y + 38
+    local songsList = {"Макс Корж - Мотылёк", "Okean Elzy - Обійми", "Imagine Dragons - Believer", "Моргенштерн - Малышка", "Антитіла - TDME", "Ed Sheeran - Shape of You"}
+    createDropdown(parent, getText("songs"), y, songsList, "Выберите", function(song)
+        playSong(song)
+    end)
+    y = y + 38
+    return y
+end)
+
+-- Settings
+addToContainer("Settings", function(parent, y)
+    local colorLabel = Instance.new("TextLabel")
+    colorLabel.Size = UDim2.new(1, 0, 0, 28)
+    colorLabel.Position = UDim2.new(0, 0, 0, y)
+    colorLabel.BackgroundTransparency = 1
+    colorLabel.Text = getText("settingsColor")
+    colorLabel.TextColor3 = Color3.new(0.9,0.9,1)
+    colorLabel.Font = Enum.Font.GothamBold
+    colorLabel.TextSize = 14
+    colorLabel.TextXAlignment = Enum.TextXAlignment.Left
+    colorLabel.Parent = parent
+    y = y + 32
+    local colorRow = Instance.new("Frame")
+    colorRow.Size = UDim2.new(1, -5, 0, 30)
+    colorRow.Position = UDim2.new(0, 2, 0, y)
+    colorRow.BackgroundTransparency = 1
+    colorRow.Parent = parent
+    local colors = {
+        {Color3.fromRGB(25,25,40), "Тёмный"},
+        {Color3.fromRGB(30,30,50), "Синий"},
+        {Color3.fromRGB(50,20,60), "Фиолет"},
+        {Color3.fromRGB(20,50,50), "Зелёный"},
+        {Color3.fromRGB(50,30,30), "Красный"},
+        {Color3.fromRGB(40,40,40), "Серый"}
+    }
+    for i,c in ipairs(colors) do
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0.15, 0, 0.8, 0)
+        b.Position = UDim2.new(0.02 + (0.15+0.02)*(i-1), 0, 0.1, 0)
+        b.BackgroundColor3 = c[1]
+        b.Text = (menuLanguage == "ru") and c[2] or c[2]
+        b.TextColor3 = Color3.new(1,1,1)
+        b.Font = Enum.Font.Gotham
+        b.TextSize = 8
+        b.Parent = colorRow
+        Instance.new("UICorner").Parent = b
+        b.MouseButton1Click:Connect(function()
+            menuColor = c[1]
+            frame.BackgroundColor3 = c[1]
+            iconButton.BackgroundColor3 = c[1]
+        end)
+    end
+    y = y + 36
+
+    local langLabel = Instance.new("TextLabel")
+    langLabel.Size = UDim2.new(1, 0, 0, 28)
+    langLabel.Position = UDim2.new(0, 0, 0, y)
+    langLabel.BackgroundTransparency = 1
+    langLabel.Text = getText("settingsLang")
+    langLabel.TextColor3 = Color3.new(0.9,0.9,1)
+    langLabel.Font = Enum.Font.GothamBold
+    langLabel.TextSize = 14
+    langLabel.TextXAlignment = Enum.TextXAlignment.Left
+    langLabel.Parent = parent
+    y = y + 32
+    local langRow = Instance.new("Frame")
+    langRow.Size = UDim2.new(1, -5, 0, 30)
+    langRow.Position = UDim2.new(0, 2, 0, y)
+    langRow.BackgroundTransparency = 1
+    langRow.Parent = parent
+    local function langBtn(text, code, x)
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0.2, 0, 0.8, 0)
+        b.Position = UDim2.new(x, 0, 0.1, 0)
+        b.Text = text
+        b.TextColor3 = Color3.new(1,1,1)
+        b.BackgroundColor3 = (menuLanguage == code) and Color3.fromRGB(70,200,70) or Color3.fromRGB(60,60,80)
+        b.Font = Enum.Font.GothamBold
+        b.TextSize = 12
+        b.Parent = langRow
+        Instance.new("UICorner").Parent = b
+        b.MouseButton1Click:Connect(function()
+            menuLanguage = code
+        end)
+        return b
+    end
+    langBtn("Русский", "ru", 0.02)
+    langBtn("English", "en", 0.24)
+    y = y + 36
+
+    local sizeLabel = Instance.new("TextLabel")
+    sizeLabel.Size = UDim2.new(1, 0, 0, 28)
+    sizeLabel.Position = UDim2.new(0, 0, 0, y)
+    sizeLabel.BackgroundTransparency = 1
+    sizeLabel.Text = getText("settingsSize")
+    sizeLabel.TextColor3 = Color3.new(0.9,0.9,1)
+    sizeLabel.Font = Enum.Font.GothamBold
+    sizeLabel.TextSize = 14
+    sizeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    sizeLabel.Parent = parent
+    y = y + 32
+    local sizeRow = Instance.new("Frame")
+    sizeRow.Size = UDim2.new(1, -5, 0, 30)
+    sizeRow.Position = UDim2.new(0, 2, 0, y)
+    sizeRow.BackgroundTransparency = 1
+    sizeRow.Parent = parent
+    local sizeMinus = Instance.new("TextButton")
+    sizeMinus.Size = UDim2.new(0.12, 0, 0.8, 0)
+    sizeMinus.Position = UDim2.new(0.02, 0, 0.1, 0)
+    sizeMinus.Text = getText("decrease")
+    sizeMinus.TextColor3 = Color3.new(1,1,1)
+    sizeMinus.BackgroundColor3 = Color3.fromRGB(60,60,80)
+    sizeMinus.Font = Enum.Font.GothamBold
+    sizeMinus.TextSize = 16
+    sizeMinus.Parent = sizeRow
+    Instance.new("UICorner").Parent = sizeMinus
+    local sizeDisplay = Instance.new("TextLabel")
+    sizeDisplay.Size = UDim2.new(0.2, 0, 0.8, 0)
+    sizeDisplay.Position = UDim2.new(0.16, 0, 0.1, 0)
+    sizeDisplay.BackgroundTransparency = 1
+    sizeDisplay.Text = "100%"
+    sizeDisplay.TextColor3 = Color3.new(1,1,1)
+    sizeDisplay.Font = Enum.Font.Gotham
+    sizeDisplay.TextSize = 13
+    sizeDisplay.Parent = sizeRow
+    local sizePlus = Instance.new("TextButton")
+    sizePlus.Size = UDim2.new(0.12, 0, 0.8, 0)
+    sizePlus.Position = UDim2.new(0.38, 0, 0.1, 0)
+    sizePlus.Text = getText("increase")
+    sizePlus.TextColor3 = Color3.new(1,1,1)
+    sizePlus.BackgroundColor3 = Color3.fromRGB(60,60,80)
+    sizePlus.Font = Enum.Font.GothamBold
+    sizePlus.TextSize = 16
+    sizePlus.Parent = sizeRow
+    Instance.new("UICorner").Parent = sizePlus
+    local function updateMenuScale(newScale)
+        newScale = math.clamp(newScale, 0.6, 1.5)
+        menuScale = newScale
+        frame.Size = UDim2.new(0, 480 * menuScale, 0, 580 * menuScale)
+        frame.Position = UDim2.new(0.5, -240 * menuScale, 0.5, -290 * menuScale)
+        sizeDisplay.Text = string.format("%.0f%%", menuScale * 100)
+    end
+    sizeMinus.MouseButton1Click:Connect(function() updateMenuScale(menuScale - 0.1) end)
+    sizePlus.MouseButton1Click:Connect(function() updateMenuScale(menuScale + 0.1) end)
+    y = y + 36
+    return y
+end)
+
+-- Bio
+addToContainer("Bio", function(parent, y)
+    local bioTitle = Instance.new("TextLabel")
+    bioTitle.Size = UDim2.new(1, 0, 0, 30)
+    bioTitle.Position = UDim2.new(0, 0, 0, y)
+    bioTitle.BackgroundTransparency = 1
+    bioTitle.Text = getText("bioTitle")
+    bioTitle.TextColor3 = Color3.new(0.9,0.8,1)
+    bioTitle.Font = Enum.Font.GothamBold
+    bioTitle.TextSize = 18
+    bioTitle.TextXAlignment = Enum.TextXAlignment.Center
+    bioTitle.Parent = parent
+    y = y + 36
+    local function createBioLabel(text, yPos, color)
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 0, 28)
+        label.Position = UDim2.new(0, 0, 0, yPos)
+        label.BackgroundTransparency = 1
+        label.Text = text
+        label.TextColor3 = color or Color3.new(1,1,1)
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 15
+        label.TextXAlignment = Enum.TextXAlignment.Center
+        label.Parent = parent
+        return label
+    end
+    createBioLabel(getText("tg"), y, Color3.new(0.7,1,0.7))
+    y = y + 34
+    createBioLabel(getText("tgChannel"), y, Color3.new(0.6,0.8,1))
+    y = y + 34
+    createBioLabel(getText("discord"), y, Color3.new(0.8,0.6,1))
+    y = y + 34
+    return y
+end)
+
+-- Combat
 addToContainer("Combat", function(parent, y)
-    -- Заголовок "Режим"
     local modeLabel = Instance.new("TextLabel")
     modeLabel.Size = UDim2.new(1, 0, 0, 28)
     modeLabel.Position = UDim2.new(0, 0, 0, y)
@@ -1337,7 +1797,6 @@ addToContainer("Combat", function(parent, y)
     local btnInnocent = createModeButton(getText("innocent"), Color3.fromRGB(0,200,0), 0.68)
     y = y + 36
 
-    -- Контейнеры подрежимов
     local function createSubModeContainer()
         local sub = Instance.new("Frame")
         sub.Size = UDim2.new(1, 0, 0, 0)
@@ -1400,7 +1859,7 @@ addToContainer("Combat", function(parent, y)
     addMurderRow(function(p, y) createToggleRow(p, getText("knifeAnim"), y, false, function(s) murderKnifeAnim = s end) return y end)
     addMurderRow(function(p, y) createToggleRow(p, getText("fakeSheriff"), y, false, function(s) murderFakeSheriff = s end) return y end)
     addMurderRow(function(p, y)
-        local dd = createDropdown(p, getText("killSelected"), y, getOtherPlayers(), "Выберите игрока", function(pl)
+        createDropdown(p, getText("killSelected"), y, getOtherPlayers(), "Выберите игрока", function(pl)
             murderSelectedPlayer = pl
             killPlayer(pl)
         end)
@@ -1417,18 +1876,15 @@ addToContainer("Combat", function(parent, y)
     end
     addInnocentRow(function(p, y) createToggleRow(p, getText("godMode"), y, false, function(s) innocentGodMode = s; applyPlayerSettings() end) return y end)
     innocentMode.Size = UDim2.new(1, 0, 0, iY + 20)
-
     return y + 20
 end)
 
--- ===== ЦИКЛ ДЛЯ COMBAT (запускается в Heartbeat) =====
+-- ===== CYCLES FOR COMBAT =====
 local combatLoop = RunService.Heartbeat:Connect(function()
-    -- Sheriff Aimbot
     if sheriffAimbot then
         local target = findClosestPlayer("Murder")
         if target then aimbot(target) end
     end
-    -- Sheriff Trigger Bot
     if sheriffTrigger then
         local target = findClosestPlayer("Murder")
         if target then
@@ -1451,12 +1907,10 @@ local combatLoop = RunService.Heartbeat:Connect(function()
             end
         end
     end
-    -- Sheriff Auto Kill
     if sheriffAutoKill then
         local target = findClosestPlayer("Murder")
         if target then killPlayer(target) end
     end
-    -- Sheriff Auto Shoot Murder
     if sheriffAutoShootMurder then
         local target = findClosestPlayer("Murder")
         if target then
@@ -1464,18 +1918,15 @@ local combatLoop = RunService.Heartbeat:Connect(function()
             if mouse then mouse:Button1Down(); task.wait(0.05); mouse:Button1Up() end
         end
     end
-    -- Murder Auto Kill Sheriff
     if murderAutoKillSheriff then
         local target = findPlayerByRole("Sheriff")
         if target then killPlayer(target) end
     end
-    -- Murder Auto Kill All
     if murderAutoKillAll then
         for _, p in ipairs(getOtherPlayers()) do killPlayer(p) end
     end
 end)
 
--- Остановка цикла при выключении скрипта
 task.spawn(function()
     while wait(1) do
         if not gui then combatLoop:Disconnect() break end
@@ -1590,4 +2041,4 @@ applyPlayerSettings()
 applyCharacterColor(characterColor)
 updateGlow()
 
-print("SkyHub Premium (с Combat) загружен! By dont16383")
+print("SkyHub Premium загружен! By dont16383")
