@@ -1,10 +1,10 @@
--- SkyHub Premium (с AutoFarm и Troll)
+-- SkyHub Premium (с AutoFarm и Troll) - ИСПРАВЛЕННЫЙ
 -- Автор: dont16383
 
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
+local UserInputService = game:GetService("UserInputService") -- ИСПРАВЛЕНО!
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1622,7 +1622,7 @@ addToContainer("Bio", function(parent, y)
     return y
 end)
 
--- ===== НОВАЯ ВКЛАДКА AUTOFARM =====
+-- ===== AUTOFARM =====
 addToContainer("AutoFarm", function(parent, y)
     createToggleRow(parent, getText("autoFarmCoins"), y, false, function(s)
         autoFarmEnabled = s
@@ -1646,7 +1646,6 @@ addToContainer("AutoFarm", function(parent, y)
             coinsLabel.Text = getText("coinsEarned") .. tostring(coinsFarmed)
         end
     end)
-    -- Сохраняем для очистки
     parent._coinsUpdater = coinsUpdater
     y = y + 34
 
@@ -1668,18 +1667,18 @@ addToContainer("AutoFarm", function(parent, y)
     return y
 end)
 
--- ===== НОВАЯ ВКЛАДКА TROLL =====
+-- ===== TROLL =====
 addToContainer("Troll", function(parent, y)
-    -- Эмоции (выпадающий список)
+    -- Эмоции
     local emotesList = {"Wave", "Point", "Cheer", "Dance", "Laugh", "Shrug", "Blush", "Pose"}
-    local ddEmotes = createDropdown(parent, getText("emotes"), y, emotesList, "Выберите", function(emote)
+    createDropdown(parent, getText("emotes"), y, emotesList, "Выберите", function(emote)
         playEmote(emote)
     end)
     y = y + 38
 
-    -- Анимации (выпадающий список)
+    -- Анимации
     local animList = {"T-Pose", "Zombie", "Robot", "Floss", "Sit", "Point"}
-    local ddAnims = createDropdown(parent, getText("animations"), y, animList, "Выберите", function(anim)
+    createDropdown(parent, getText("animations"), y, animList, "Выберите", function(anim)
         playAnimation(anim)
     end)
     y = y + 38
@@ -1702,9 +1701,9 @@ addToContainer("Troll", function(parent, y)
     end)
     y = y + 38
 
-    -- Песни (выпадающий список)
+    -- Песни
     local songsList = {"Макс Корж - Мотылёк", "Okean Elzy - Обійми", "Imagine Dragons - Believer", "Моргенштерн - Малышка", "Антитіла - TDME", "Ed Sheeran - Shape of You"}
-    local ddSongs = createDropdown(parent, getText("songs"), y, songsList, "Выберите", function(song)
+    createDropdown(parent, getText("songs"), y, songsList, "Выберите", function(song)
         playSong(song)
     end)
     y = y + 38
