@@ -1,26 +1,28 @@
 --[[
-    🚀 SKYHUB
-    Roblox Studio LocalScript
-    Version: 1.0.0
+🚀 SKYHUB
+Roblox Studio LocalScript
+Version: 1.0.0
 
-    Большой локальный хаб:
-    • Player
-    • ESP
-    • Visual
-    • Teleport
-    • Fling Test
-    • AutoFarm
-    • Troll
-    • Combat Training
-    • Settings
-    • Bio
+Большой локальный хаб:  
+• Player  
+• ESP  
+• Visual  
+• Teleport  
+• Fling Test  
+• AutoFarm  
+• Troll  
+• Combat Training  
+• Settings  
+• Bio  
 
-    Предназначено для собственной Roblox-игры / Studio.
+Предназначено для собственной Roblox-игры / Studio.
+
 ]]
 
-------------------------------------------------------------
+
+---
+
 -- SERVICES
-------------------------------------------------------------
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -32,9 +34,10 @@ local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
-------------------------------------------------------------
+
+---
+
 -- CHARACTER
-------------------------------------------------------------
 
 local Character
 local Humanoid
@@ -53,47 +56,50 @@ LocalPlayer.CharacterAdded:Connect(function()
     GetCharacter()
 end)
 
-------------------------------------------------------------
+
+---
+
 -- CONFIG
-------------------------------------------------------------
 
 local Config = {
     Speed = 16,
     JumpPower = 50,
     CharacterScale = 1,
 
-    Invisible = false,
-    Fly = false,
-    FlySpeed = 60,
-    FlyAnimation = false,
-    InfiniteJump = false,
-    Noclip = false,
+    Invisible = false,  
+    Fly = false,  
+    FlySpeed = 60,  
+    FlyAnimation = false,  
+    InfiniteJump = false,  
+    Noclip = false,  
 
-    ESP = false,
-    WeaponESP = false,
+    ESP = false,  
+    WeaponESP = false,  
 
-    Glow = false,
+    Glow = false,  
 
-    AutoFarm = false,
-    AutoWin = false,
+    AutoFarm = false,  
+    AutoWin = false,  
 
-    MenuScale = 1,
+    MenuScale = 1,  
 
-    Language = "RU",
-    Theme = "Purple",
+    Language = "RU",  
+    Theme = "Purple",  
 
-    SelectedPlayer = nil,
+    SelectedPlayer = nil,  
 
-    Sky = "Default",
-    Weather = "Clear",
+    Sky = "Default",  
+    Weather = "Clear",  
 
-    SavedLobbyPosition = nil,
+    SavedLobbyPosition = nil,  
     SavedMapPosition = nil
+
 }
 
-------------------------------------------------------------
+
+---
+
 -- COLORS
-------------------------------------------------------------
 
 local Themes = {
     Dark = {
@@ -102,42 +108,44 @@ local Themes = {
         Accent = Color3.fromRGB(90,90,100)
     },
 
-    Blue = {
-        Main = Color3.fromRGB(14,20,30),
-        Secondary = Color3.fromRGB(20,30,45),
-        Accent = Color3.fromRGB(40,130,255)
-    },
+    Blue = {  
+        Main = Color3.fromRGB(14,20,30),  
+        Secondary = Color3.fromRGB(20,30,45),  
+        Accent = Color3.fromRGB(40,130,255)  
+    },  
 
-    Purple = {
-        Main = Color3.fromRGB(18,14,27),
-        Secondary = Color3.fromRGB(28,20,42),
-        Accent = Color3.fromRGB(145,70,255)
-    },
+    Purple = {  
+        Main = Color3.fromRGB(18,14,27),  
+        Secondary = Color3.fromRGB(28,20,42),  
+        Accent = Color3.fromRGB(145,70,255)  
+    },  
 
-    Green = {
-        Main = Color3.fromRGB(14,25,18),
-        Secondary = Color3.fromRGB(20,38,26),
-        Accent = Color3.fromRGB(60,210,110)
-    },
+    Green = {  
+        Main = Color3.fromRGB(14,25,18),  
+        Secondary = Color3.fromRGB(20,38,26),  
+        Accent = Color3.fromRGB(60,210,110)  
+    },  
 
-    Red = {
-        Main = Color3.fromRGB(27,15,17),
-        Secondary = Color3.fromRGB(40,20,23),
-        Accent = Color3.fromRGB(230,65,75)
-    },
+    Red = {  
+        Main = Color3.fromRGB(27,15,17),  
+        Secondary = Color3.fromRGB(40,20,23),  
+        Accent = Color3.fromRGB(230,65,75)  
+    },  
 
-    Gray = {
-        Main = Color3.fromRGB(28,28,28),
-        Secondary = Color3.fromRGB(38,38,38),
-        Accent = Color3.fromRGB(160,160,160)
+    Gray = {  
+        Main = Color3.fromRGB(28,28,28),  
+        Secondary = Color3.fromRGB(38,38,38),  
+        Accent = Color3.fromRGB(160,160,160)  
     }
+
 }
 
 local Theme = Themes[Config.Theme]
 
-------------------------------------------------------------
+
+---
+
 -- GUI
-------------------------------------------------------------
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SkyHub"
@@ -145,9 +153,10 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-------------------------------------------------------------
+
+---
+
 -- LOADING SCREEN
-------------------------------------------------------------
 
 local Loading = Instance.new("Frame")
 Loading.Size = UDim2.fromScale(1,1)
@@ -223,9 +232,10 @@ TweenService:Create(
 task.wait(0.5)
 Loading:Destroy()
 
-------------------------------------------------------------
+
+---
+
 -- MAIN WINDOW
-------------------------------------------------------------
 
 local Main = Instance.new("Frame")
 Main.Name = "Main"
@@ -244,9 +254,10 @@ Stroke.Transparency = 0.65
 Stroke.Thickness = 1
 Stroke.Parent = Main
 
-------------------------------------------------------------
+
+---
+
 -- TOP BAR
-------------------------------------------------------------
 
 local Top = Instance.new("Frame")
 Top.Size = UDim2.new(1,0,0,55)
@@ -297,9 +308,10 @@ Version.TextSize = 11
 Version.TextXAlignment = Enum.TextXAlignment.Left
 Version.Parent = Top
 
-------------------------------------------------------------
+
+---
+
 -- CLOSE BUTTON
-------------------------------------------------------------
 
 local Close = Instance.new("TextButton")
 Close.Size = UDim2.new(0,40,0,40)
@@ -313,15 +325,21 @@ Close.Parent = Top
 
 Instance.new("UICorner",Close).CornerRadius = UDim.new(0,9)
 
-------------------------------------------------------------
--- SIDEBAR
-------------------------------------------------------------
 
-local Sidebar = Instance.new("Frame")
+---
+
+-- SIDEBAR (SCROLLINGFRAME)
+
+local Sidebar = Instance.new("ScrollingFrame")
 Sidebar.Size = UDim2.new(0,155,1,-70)
 Sidebar.Position = UDim2.new(0,10,0,65)
 Sidebar.BackgroundColor3 = Theme.Secondary
 Sidebar.BorderSizePixel = 0
+Sidebar.ScrollingDirection = Enum.ScrollingDirection.Y
+Sidebar.ScrollBarThickness = 3
+Sidebar.ScrollBarImageColor3 = Theme.Accent
+Sidebar.CanvasSize = UDim2.new(0,0,0,0)
+Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y
 Sidebar.Parent = Main
 
 Instance.new("UICorner",Sidebar).CornerRadius = UDim.new(0,11)
@@ -332,15 +350,30 @@ SideList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 SideList.SortOrder = Enum.SortOrder.LayoutOrder
 SideList.Parent = Sidebar
 
+-- Прокрутка колёсиком мыши (и свайп на тачпаде)
+Sidebar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseWheel then
+        Sidebar.CanvasPosition = Vector2.new(
+            0,
+            math.clamp(
+                Sidebar.CanvasPosition.Y - input.Position.Z * 40,
+                0,
+                math.max(0, Sidebar.AbsoluteCanvasSize.Y - Sidebar.AbsoluteWindowSize.Y)
+            )
+        )
+    end
+end)
+
 local SidePadding = Instance.new("UIPadding")
 SidePadding.PaddingTop = UDim.new(0,10)
 SidePadding.PaddingLeft = UDim.new(0,7)
 SidePadding.PaddingRight = UDim.new(0,7)
 SidePadding.Parent = Sidebar
 
-------------------------------------------------------------
+
+---
+
 -- CONTENT
-------------------------------------------------------------
 
 local Content = Instance.new("Frame")
 Content.Size = UDim2.new(1,-180,1,-70)
@@ -348,9 +381,10 @@ Content.Position = UDim2.new(0,170,0,65)
 Content.BackgroundTransparency = 1
 Content.Parent = Main
 
-------------------------------------------------------------
+
+---
+
 -- UTILITY
-------------------------------------------------------------
 
 local function CreateButton(parent,text,callback)
     local Button = Instance.new("TextButton")
@@ -364,25 +398,25 @@ local function CreateButton(parent,text,callback)
     Button.AutoButtonColor = false
     Button.Parent = parent
 
-    Instance.new("UICorner",Button).CornerRadius = UDim.new(0,8)
+    Instance.new("UICorner",Button).CornerRadius = UDim.new(0,8)  
 
-    Button.MouseEnter:Connect(function()
-        TweenService:Create(
-            Button,
-            TweenInfo.new(0.15),
-            {BackgroundColor3 = Theme.Accent}
-        ):Play()
-    end)
+    Button.MouseEnter:Connect(function()  
+        TweenService:Create(  
+            Button,  
+            TweenInfo.new(0.15),  
+            {BackgroundColor3 = Theme.Accent}  
+        ):Play()  
+    end)  
 
-    Button.MouseLeave:Connect(function()
-        TweenService:Create(
-            Button,
-            TweenInfo.new(0.15),
-            {BackgroundColor3 = Color3.fromRGB(35,35,43)}
-        ):Play()
-    end)
+    Button.MouseLeave:Connect(function()  
+        TweenService:Create(  
+            Button,  
+            TweenInfo.new(0.15),  
+            {BackgroundColor3 = Color3.fromRGB(35,35,43)}  
+        ):Play()  
+    end)  
 
-    Button.MouseButton1Click:Connect(callback)
+    Button.MouseButton1Click:Connect(callback)  
 
     return Button
 end
@@ -395,49 +429,49 @@ local function CreateToggle(parent,text,default,callback)
     Button.Text = ""
     Button.Parent = parent
 
-    Instance.new("UICorner",Button).CornerRadius = UDim.new(0,8)
+    Instance.new("UICorner",Button).CornerRadius = UDim.new(0,8)  
 
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1,-70,1,0)
-    Label.Position = UDim2.new(0,12,0,0)
-    Label.BackgroundTransparency = 1
-    Label.Text = text
-    Label.TextColor3 = Color3.fromRGB(230,230,235)
-    Label.Font = Enum.Font.Gotham
-    Label.TextSize = 13
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Button
+    local Label = Instance.new("TextLabel")  
+    Label.Size = UDim2.new(1,-70,1,0)  
+    Label.Position = UDim2.new(0,12,0,0)  
+    Label.BackgroundTransparency = 1  
+    Label.Text = text  
+    Label.TextColor3 = Color3.fromRGB(230,230,235)  
+    Label.Font = Enum.Font.Gotham  
+    Label.TextSize = 13  
+    Label.TextXAlignment = Enum.TextXAlignment.Left  
+    Label.Parent = Button  
 
-    local State = Instance.new("TextLabel")
-    State.Size = UDim2.new(0,45,0,25)
-    State.Position = UDim2.new(1,-55,0.5,-12)
-    State.BackgroundColor3 = default and Theme.Accent or Color3.fromRGB(55,55,63)
-    State.Text = default and "ON" or "OFF"
-    State.TextColor3 = Color3.new(1,1,1)
-    State.Font = Enum.Font.GothamBold
-    State.TextSize = 10
-    State.Parent = Button
+    local State = Instance.new("TextLabel")  
+    State.Size = UDim2.new(0,45,0,25)  
+    State.Position = UDim2.new(1,-55,0.5,-12)  
+    State.BackgroundColor3 = default and Theme.Accent or Color3.fromRGB(55,55,63)  
+    State.Text = default and "ON" or "OFF"  
+    State.TextColor3 = Color3.new(1,1,1)  
+    State.Font = Enum.Font.GothamBold  
+    State.TextSize = 10  
+    State.Parent = Button  
 
-    Instance.new("UICorner",State).CornerRadius = UDim.new(0,7)
+    Instance.new("UICorner",State).CornerRadius = UDim.new(0,7)  
 
-    local value = default
+    local value = default  
 
-    Button.MouseButton1Click:Connect(function()
-        value = not value
+    Button.MouseButton1Click:Connect(function()  
+        value = not value  
 
-        State.Text = value and "ON" or "OFF"
+        State.Text = value and "ON" or "OFF"  
 
-        TweenService:Create(
-            State,
-            TweenInfo.new(0.15),
-            {
-                BackgroundColor3 =
-                    value and Theme.Accent or Color3.fromRGB(55,55,63)
-            }
-        ):Play()
+        TweenService:Create(  
+            State,  
+            TweenInfo.new(0.15),  
+            {  
+                BackgroundColor3 =  
+                    value and Theme.Accent or Color3.fromRGB(55,55,63)  
+            }  
+        ):Play()  
 
-        callback(value)
-    end)
+        callback(value)  
+    end)  
 
     return Button
 end
@@ -462,81 +496,82 @@ local function CreateSlider(parent,text,min,max,default,callback)
     Frame.BackgroundTransparency = 1
     Frame.Parent = parent
 
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1,0,0,25)
-    Label.BackgroundTransparency = 1
-    Label.Text = text.." : "..tostring(default)
-    Label.TextColor3 = Color3.fromRGB(225,225,230)
-    Label.Font = Enum.Font.Gotham
-    Label.TextSize = 13
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Frame
+    local Label = Instance.new("TextLabel")  
+    Label.Size = UDim2.new(1,0,0,25)  
+    Label.BackgroundTransparency = 1  
+    Label.Text = text.." : "..tostring(default)  
+    Label.TextColor3 = Color3.fromRGB(225,225,230)  
+    Label.Font = Enum.Font.Gotham  
+    Label.TextSize = 13  
+    Label.TextXAlignment = Enum.TextXAlignment.Left  
+    Label.Parent = Frame  
 
-    local Back = Instance.new("Frame")
-    Back.Size = UDim2.new(1,0,0,7)
-    Back.Position = UDim2.new(0,0,0,35)
-    Back.BackgroundColor3 = Color3.fromRGB(45,45,52)
-    Back.BorderSizePixel = 0
-    Back.Parent = Frame
+    local Back = Instance.new("Frame")  
+    Back.Size = UDim2.new(1,0,0,7)  
+    Back.Position = UDim2.new(0,0,0,35)  
+    Back.BackgroundColor3 = Color3.fromRGB(45,45,52)  
+    Back.BorderSizePixel = 0  
+    Back.Parent = Frame  
 
-    Instance.new("UICorner",Back).CornerRadius = UDim.new(1,0)
+    Instance.new("UICorner",Back).CornerRadius = UDim.new(1,0)  
 
-    local Fill = Instance.new("Frame")
-    Fill.Size = UDim2.new((default-min)/(max-min),0,1,0)
-    Fill.BackgroundColor3 = Theme.Accent
-    Fill.BorderSizePixel = 0
-    Fill.Parent = Back
+    local Fill = Instance.new("Frame")  
+    Fill.Size = UDim2.new((default-min)/(max-min),0,1,0)  
+    Fill.BackgroundColor3 = Theme.Accent  
+    Fill.BorderSizePixel = 0  
+    Fill.Parent = Back  
 
-    Instance.new("UICorner",Fill).CornerRadius = UDim.new(1,0)
+    Instance.new("UICorner",Fill).CornerRadius = UDim.new(1,0)  
 
-    local Dragging = false
+    local Dragging = false  
 
-    local function Update(x)
-        local percent = math.clamp(
-            (x-Back.AbsolutePosition.X)/Back.AbsoluteSize.X,
-            0,1
-        )
+    local function Update(x)  
+        local percent = math.clamp(  
+            (x-Back.AbsolutePosition.X)/Back.AbsoluteSize.X,  
+            0,1  
+        )  
 
-        local value = min + (max-min)*percent
+        local value = min + (max-min)*percent  
 
-        value = math.floor(value*10)/10
+        value = math.floor(value*10)/10  
 
-        Fill.Size = UDim2.new(percent,0,1,0)
-        Label.Text = text.." : "..tostring(value)
+        Fill.Size = UDim2.new(percent,0,1,0)  
+        Label.Text = text.." : "..tostring(value)  
 
-        callback(value)
-    end
+        callback(value)  
+    end  
 
-    Back.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-            Dragging = true
-            Update(input.Position.X)
-        end
-    end)
+    Back.InputBegan:Connect(function(input)  
+        if input.UserInputType == Enum.UserInputType.MouseButton1  
+        or input.UserInputType == Enum.UserInputType.Touch then  
+            Dragging = true  
+            Update(input.Position.X)  
+        end  
+    end)  
 
-    UserInputService.InputChanged:Connect(function(input)
-        if Dragging then
-            if input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch then
-                Update(input.Position.X)
-            end
-        end
-    end)
+    UserInputService.InputChanged:Connect(function(input)  
+        if Dragging then  
+            if input.UserInputType == Enum.UserInputType.MouseMovement  
+            or input.UserInputType == Enum.UserInputType.Touch then  
+                Update(input.Position.X)  
+            end  
+        end  
+    end)  
 
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-            Dragging = false
-        end
-    end)
+    UserInputService.InputEnded:Connect(function(input)  
+        if input.UserInputType == Enum.UserInputType.MouseButton1  
+        or input.UserInputType == Enum.UserInputType.Touch then  
+            Dragging = false  
+        end  
+    end)  
 
     return Frame
 end
 
-------------------------------------------------------------
+
+---
+
 -- PAGES
-------------------------------------------------------------
 
 local Pages = {}
 local TabButtons = {}
@@ -565,18 +600,18 @@ local function CreatePage(name)
     Page.Visible = false
     Page.Parent = Content
 
-    local List = Instance.new("UIListLayout")
-    List.Padding = UDim.new(0,7)
-    List.SortOrder = Enum.SortOrder.LayoutOrder
-    List.Parent = Page
+    local List = Instance.new("UIListLayout")  
+    List.Padding = UDim.new(0,7)  
+    List.SortOrder = Enum.SortOrder.LayoutOrder  
+    List.Parent = Page  
 
-    local Padding = Instance.new("UIPadding")
-    Padding.PaddingLeft = UDim.new(0,10)
-    Padding.PaddingRight = UDim.new(0,10)
-    Padding.PaddingBottom = UDim.new(0,10)
-    Padding.Parent = Page
+    local Padding = Instance.new("UIPadding")  
+    Padding.PaddingLeft = UDim.new(0,10)  
+    Padding.PaddingRight = UDim.new(0,10)  
+    Padding.PaddingBottom = UDim.new(0,10)  
+    Padding.Parent = Page  
 
-    Pages[name] = Page
+    Pages[name] = Page  
 
     return Page
 end
@@ -586,41 +621,42 @@ local function SelectPage(name)
         page.Visible = pageName == name
     end
 
-    for tabName,button in pairs(TabButtons) do
-        if tabName == name then
-            button.BackgroundColor3 = Theme.Accent
-        else
-            button.BackgroundColor3 = Color3.fromRGB(30,30,37)
-        end
+    for tabName,button in pairs(TabButtons) do  
+        if tabName == name then  
+            button.BackgroundColor3 = Theme.Accent  
+        else  
+            button.BackgroundColor3 = Color3.fromRGB(30,30,37)  
+        end  
     end
 end
 
 for _,name in ipairs(TabNames) do
 
-    local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(1,0,0,37)
-    Button.BackgroundColor3 = Color3.fromRGB(30,30,37)
-    Button.BorderSizePixel = 0
-    Button.Text = name
-    Button.TextColor3 = Color3.fromRGB(225,225,230)
-    Button.Font = Enum.Font.GothamMedium
-    Button.TextSize = 12
-    Button.Parent = Sidebar
+    local Button = Instance.new("TextButton")  
+    Button.Size = UDim2.new(1,0,0,37)  
+    Button.BackgroundColor3 = Color3.fromRGB(30,30,37)  
+    Button.BorderSizePixel = 0  
+    Button.Text = name  
+    Button.TextColor3 = Color3.fromRGB(225,225,230)  
+    Button.Font = Enum.Font.GothamMedium  
+    Button.TextSize = 12  
+    Button.Parent = Sidebar  
 
-    Instance.new("UICorner",Button).CornerRadius = UDim.new(0,8)
+    Instance.new("UICorner",Button).CornerRadius = UDim.new(0,8)  
 
-    TabButtons[name] = Button
+    TabButtons[name] = Button  
 
-    local Page = CreatePage(name)
+    local Page = CreatePage(name)  
 
-    Button.MouseButton1Click:Connect(function()
-        SelectPage(name)
+    Button.MouseButton1Click:Connect(function()  
+        SelectPage(name)  
     end)
 end
 
-------------------------------------------------------------
+
+---
+
 -- PLAYER PAGE
-------------------------------------------------------------
 
 local PlayerPage = Pages["👤 Player"]
 
@@ -635,9 +671,9 @@ CreateSlider(
     function(value)
         Config.Speed = value
 
-        if Humanoid then
-            Humanoid.WalkSpeed = value
-        end
+        if Humanoid then  
+            Humanoid.WalkSpeed = value  
+        end  
     end
 )
 
@@ -650,10 +686,10 @@ CreateSlider(
     function(value)
         Config.JumpPower = value
 
-        if Humanoid then
-            Humanoid.UseJumpPower = true
-            Humanoid.JumpPower = value
-        end
+        if Humanoid then  
+            Humanoid.UseJumpPower = true  
+            Humanoid.JumpPower = value  
+        end  
     end
 )
 
@@ -665,29 +701,29 @@ CreateSlider(
     1,
     function(value)
 
-        Config.CharacterScale = value
+        Config.CharacterScale = value  
 
-        if Character then
+        if Character then  
 
-            local Scale = Character:FindFirstChild("BodyDepthScale")
+            local Scale = Character:FindFirstChild("BodyDepthScale")  
 
-            if Scale then
-                Scale.Value = value
-            end
+            if Scale then  
+                Scale.Value = value  
+            end  
 
-            local Height = Character:FindFirstChild("BodyHeightScale")
+            local Height = Character:FindFirstChild("BodyHeightScale")  
 
-            if Height then
-                Height.Value = value
-            end
+            if Height then  
+                Height.Value = value  
+            end  
 
-            local Width = Character:FindFirstChild("BodyWidthScale")
+            local Width = Character:FindFirstChild("BodyWidthScale")  
 
-            if Width then
-                Width.Value = value
-            end
+            if Width then  
+                Width.Value = value  
+            end  
 
-        end
+        end  
     end
 )
 
@@ -697,15 +733,15 @@ CreateToggle(
     false,
     function(value)
 
-        Config.Invisible = value
+        Config.Invisible = value  
 
-        if Character then
-            for _,obj in ipairs(Character:GetDescendants()) do
-                if obj:IsA("BasePart") then
-                    obj.LocalTransparencyModifier = value and 1 or 0
-                end
-            end
-        end
+        if Character then  
+            for _,obj in ipairs(Character:GetDescendants()) do  
+                if obj:IsA("BasePart") then  
+                    obj.LocalTransparencyModifier = value and 1 or 0  
+                end  
+            end  
+        end  
     end
 )
 
@@ -761,143 +797,146 @@ CreateButton(
     "↩ Сбросить Player",
     function()
 
-        Config.Speed = 16
-        Config.JumpPower = 50
-        Config.FlySpeed = 60
-        Config.Invisible = false
-        Config.Fly = false
-        Config.InfiniteJump = false
-        Config.Noclip = false
+        Config.Speed = 16  
+        Config.JumpPower = 50  
+        Config.FlySpeed = 60  
+        Config.Invisible = false  
+        Config.Fly = false  
+        Config.InfiniteJump = false  
+        Config.Noclip = false  
 
-        if Humanoid then
-            Humanoid.WalkSpeed = 16
-            Humanoid.JumpPower = 50
-        end
+        if Humanoid then  
+            Humanoid.WalkSpeed = 16  
+            Humanoid.JumpPower = 50  
+        end  
 
-        if Character then
-            for _,obj in ipairs(Character:GetDescendants()) do
-                if obj:IsA("BasePart") then
-                    obj.LocalTransparencyModifier = 0
-                end
-            end
-        end
+        if Character then  
+            for _,obj in ipairs(Character:GetDescendants()) do  
+                if obj:IsA("BasePart") then  
+                    obj.LocalTransparencyModifier = 0  
+                end  
+            end  
+        end  
     end
 )
 
-------------------------------------------------------------
+
+---
+
 -- FLY SYSTEM
-------------------------------------------------------------
 
 local FlyVelocity
 local FlyGyro
 
 RunService.RenderStepped:Connect(function()
 
-    if not Character or not RootPart then
-        return
-    end
+    if not Character or not RootPart then  
+        return  
+    end  
 
-    if Config.Fly then
+    if Config.Fly then  
 
-        if not FlyVelocity then
+        if not FlyVelocity then  
 
-            FlyVelocity = Instance.new("BodyVelocity")
-            FlyVelocity.MaxForce = Vector3.new(1e6,1e6,1e6)
-            FlyVelocity.Velocity = Vector3.zero
-            FlyVelocity.Parent = RootPart
+            FlyVelocity = Instance.new("BodyVelocity")  
+            FlyVelocity.MaxForce = Vector3.new(1e6,1e6,1e6)  
+            FlyVelocity.Velocity = Vector3.zero  
+            FlyVelocity.Parent = RootPart  
 
-            FlyGyro = Instance.new("BodyGyro")
-            FlyGyro.MaxTorque = Vector3.new(1e6,1e6,1e6)
-            FlyGyro.P = 10000
-            FlyGyro.Parent = RootPart
+            FlyGyro = Instance.new("BodyGyro")  
+            FlyGyro.MaxTorque = Vector3.new(1e6,1e6,1e6)  
+            FlyGyro.P = 10000  
+            FlyGyro.Parent = RootPart  
 
-        end
+        end  
 
-        Humanoid.PlatformStand = true
+        Humanoid.PlatformStand = true  
 
-        local direction = Vector3.zero
+        local direction = Vector3.zero  
 
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-            direction += Camera.CFrame.LookVector
-        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then  
+            direction += Camera.CFrame.LookVector  
+        end  
 
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-            direction -= Camera.CFrame.LookVector
-        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then  
+            direction -= Camera.CFrame.LookVector  
+        end  
 
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-            direction -= Camera.CFrame.RightVector
-        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then  
+            direction -= Camera.CFrame.RightVector  
+        end  
 
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-            direction += Camera.CFrame.RightVector
-        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then  
+            direction += Camera.CFrame.RightVector  
+        end  
 
-        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-            direction += Vector3.yAxis
-        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then  
+            direction += Vector3.yAxis  
+        end  
 
-        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-            direction -= Vector3.yAxis
-        end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then  
+            direction -= Vector3.yAxis  
+        end  
 
-        if direction.Magnitude > 0 then
-            direction = direction.Unit
-        end
+        if direction.Magnitude > 0 then  
+            direction = direction.Unit  
+        end  
 
-        FlyVelocity.Velocity = direction * Config.FlySpeed
-        FlyGyro.CFrame = Camera.CFrame
+        FlyVelocity.Velocity = direction * Config.FlySpeed  
+        FlyGyro.CFrame = Camera.CFrame  
 
-    else
+    else  
 
-        if FlyVelocity then
-            FlyVelocity:Destroy()
-            FlyVelocity = nil
-        end
+        if FlyVelocity then  
+            FlyVelocity:Destroy()  
+            FlyVelocity = nil  
+        end  
 
-        if FlyGyro then
-            FlyGyro:Destroy()
-            FlyGyro = nil
-        end
+        if FlyGyro then  
+            FlyGyro:Destroy()  
+            FlyGyro = nil  
+        end  
 
-        Humanoid.PlatformStand = false
+        Humanoid.PlatformStand = false  
     end
 end)
 
-------------------------------------------------------------
+
+---
+
 -- NOCLIP
-------------------------------------------------------------
 
 RunService.Stepped:Connect(function()
 
-    if not Config.Noclip then
-        return
-    end
+    if not Config.Noclip then  
+        return  
+    end  
 
-    if Character then
-        for _,part in ipairs(Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
+    if Character then  
+        for _,part in ipairs(Character:GetDescendants()) do  
+            if part:IsA("BasePart") then  
+                part.CanCollide = false  
+            end  
+        end  
     end
 end)
 
-------------------------------------------------------------
+
+---
+
 -- INFINITE JUMP
-------------------------------------------------------------
 
 UserInputService.JumpRequest:Connect(function()
 
-    if Config.InfiniteJump and Humanoid then
-        Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    if Config.InfiniteJump and Humanoid then  
+        Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)  
     end
-
 end)
 
-------------------------------------------------------------
+
+---
+
 -- ESP PAGE
-------------------------------------------------------------
 
 local ESPPage = Pages["👁 ESP"]
 
@@ -907,51 +946,51 @@ local ESPObjects = {}
 
 local function ClearESP()
 
-    for player,highlight in pairs(ESPObjects) do
+    for player,highlight in pairs(ESPObjects) do  
 
-        if highlight then
-            highlight:Destroy()
-        end
+        if highlight then  
+            highlight:Destroy()  
+        end  
 
-        ESPObjects[player] = nil
+        ESPObjects[player] = nil  
     end
 end
 
 local function GetRoleColor(player)
 
-    local role = player:GetAttribute("Role")
+    local role = player:GetAttribute("Role")  
 
-    if role == "Murderer" or role == "Murder" then
-        return Color3.fromRGB(255,50,50)
-    elseif role == "Sheriff" then
-        return Color3.fromRGB(50,120,255)
-    else
-        return Color3.fromRGB(50,255,100)
+    if role == "Murderer" or role == "Murder" then  
+        return Color3.fromRGB(255,50,50)  
+    elseif role == "Sheriff" then  
+        return Color3.fromRGB(50,120,255)  
+    else  
+        return Color3.fromRGB(50,255,100)  
     end
 end
 
 local function UpdateESP()
 
-    ClearESP()
+    ClearESP()  
 
-    if not Config.ESP then
-        return
-    end
+    if not Config.ESP then  
+        return  
+    end  
 
-    for _,player in ipairs(Players:GetPlayers()) do
+    for _,player in ipairs(Players:GetPlayers()) do  
 
-        if player ~= LocalPlayer and player.Character then
+        if player ~= LocalPlayer and player.Character then  
 
-            local Highlight = Instance.new("Highlight")
-            Highlight.Name = "SkyHubESP"
-            Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-            Highlight.FillColor = GetRoleColor(player)
-            Highlight.FillTransparency = 0.55
-            Highlight.OutlineColor = GetRoleColor(player)
-            Highlight.Parent = player.Character
+            local Highlight = Instance.new("Highlight")  
+            Highlight.Name = "SkyHubESP"  
+            Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop  
+            Highlight.FillColor = GetRoleColor(player)  
+            Highlight.FillTransparency = 0.55  
+            Highlight.OutlineColor = GetRoleColor(player)  
+            Highlight.Parent = player.Character  
 
-            ESPObjects[player] = Highlight
-        end
+            ESPObjects[player] = Highlight  
+        end  
     end
 end
 
@@ -961,8 +1000,8 @@ CreateToggle(
     false,
     function(value)
 
-        Config.ESP = value
-        UpdateESP()
+        Config.ESP = value  
+        UpdateESP()  
 
     end
 )
@@ -973,7 +1012,7 @@ CreateToggle(
     false,
     function(value)
 
-        Config.WeaponESP = value
+        Config.WeaponESP = value  
 
     end
 )
@@ -986,9 +1025,10 @@ CreateButton(
     end
 )
 
-------------------------------------------------------------
+
+---
+
 -- VISUAL PAGE
-------------------------------------------------------------
 
 local VisualPage = Pages["🌌 Visual"]
 
@@ -1010,10 +1050,10 @@ CreateButton(
     "☀ Ясно",
     function()
 
-        Config.Weather = "Clear"
+        Config.Weather = "Clear"  
 
-        Lighting.FogEnd = 100000
-        Lighting.Brightness = 2
+        Lighting.FogEnd = 100000  
+        Lighting.Brightness = 2  
 
     end
 )
@@ -1023,10 +1063,10 @@ CreateButton(
     "🌧 Дождь",
     function()
 
-        Config.Weather = "Rain"
+        Config.Weather = "Rain"  
 
-        Lighting.FogEnd = 500
-        Lighting.Brightness = 1.5
+        Lighting.FogEnd = 500  
+        Lighting.Brightness = 1.5  
 
     end
 )
@@ -1036,10 +1076,10 @@ CreateButton(
     "🌫 Туман",
     function()
 
-        Config.Weather = "Fog"
+        Config.Weather = "Fog"  
 
-        Lighting.FogEnd = 80
-        Lighting.Brightness = 1
+        Lighting.FogEnd = 80  
+        Lighting.Brightness = 1  
 
     end
 )
@@ -1049,8 +1089,8 @@ CreateButton(
     "🌅 Закат",
     function()
 
-        Config.Sky = "Sunset"
-        Lighting.ClockTime = 18
+        Config.Sky = "Sunset"  
+        Lighting.ClockTime = 18  
 
     end
 )
@@ -1060,8 +1100,8 @@ CreateButton(
     "🌙 Ночь",
     function()
 
-        Config.Sky = "Night"
-        Lighting.ClockTime = 0
+        Config.Sky = "Night"  
+        Lighting.ClockTime = 0  
 
     end
 )
@@ -1071,9 +1111,9 @@ CreateButton(
     "🌌 Космос",
     function()
 
-        Config.Sky = "Space"
-        Lighting.ClockTime = 0
-        Lighting.Brightness = 0.5
+        Config.Sky = "Space"  
+        Lighting.ClockTime = 0  
+        Lighting.Brightness = 0.5  
 
     end
 )
@@ -1084,33 +1124,34 @@ CreateToggle(
     false,
     function(value)
 
-        Config.Glow = value
+        Config.Glow = value  
 
-        if Character then
+        if Character then  
 
-            local existing = Character:FindFirstChild("SkyHubGlow")
+            local existing = Character:FindFirstChild("SkyHubGlow")  
 
-            if existing then
-                existing:Destroy()
-            end
+            if existing then  
+                existing:Destroy()  
+            end  
 
-            if value then
+            if value then  
 
-                local Highlight = Instance.new("Highlight")
-                Highlight.Name = "SkyHubGlow"
-                Highlight.FillColor = Color3.fromRGB(0,200,255)
-                Highlight.OutlineColor = Color3.fromRGB(0,220,255)
-                Highlight.FillTransparency = 0.65
-                Highlight.Parent = Character
+                local Highlight = Instance.new("Highlight")  
+                Highlight.Name = "SkyHubGlow"  
+                Highlight.FillColor = Color3.fromRGB(0,200,255)  
+                Highlight.OutlineColor = Color3.fromRGB(0,220,255)  
+                Highlight.FillTransparency = 0.65  
+                Highlight.Parent = Character  
 
-            end
-        end
+            end  
+        end  
     end
 )
 
-------------------------------------------------------------
+
+---
+
 -- TELEPORT PAGE
-------------------------------------------------------------
 
 local TeleportPage = Pages["📍 Teleport"]
 
@@ -1118,14 +1159,14 @@ CreateTitle(TeleportPage,"Teleport")
 
 local function TeleportToPlayer(player)
 
-    if player
-    and player.Character
-    and player.Character:FindFirstChild("HumanoidRootPart")
-    and RootPart then
+    if player  
+    and player.Character  
+    and player.Character:FindFirstChild("HumanoidRootPart")  
+    and RootPart then  
 
-        RootPart.CFrame =
-            player.Character.HumanoidRootPart.CFrame
-            * CFrame.new(0,0,4)
+        RootPart.CFrame =  
+            player.Character.HumanoidRootPart.CFrame  
+            * CFrame.new(0,0,4)  
 
     end
 end
@@ -1135,9 +1176,9 @@ CreateButton(
     "📍 Tp к выбранному игроку",
     function()
 
-        if Config.SelectedPlayer then
-            TeleportToPlayer(Config.SelectedPlayer)
-        end
+        if Config.SelectedPlayer then  
+            TeleportToPlayer(Config.SelectedPlayer)  
+        end  
 
     end
 )
@@ -1147,9 +1188,9 @@ CreateButton(
     "🏠 Сохранить текущую позицию как Lobby",
     function()
 
-        if RootPart then
-            Config.SavedLobbyPosition = RootPart.CFrame
-        end
+        if RootPart then  
+            Config.SavedLobbyPosition = RootPart.CFrame  
+        end  
 
     end
 )
@@ -1159,9 +1200,9 @@ CreateButton(
     "🏠 Tp в Lobby",
     function()
 
-        if Config.SavedLobbyPosition and RootPart then
-            RootPart.CFrame = Config.SavedLobbyPosition
-        end
+        if Config.SavedLobbyPosition and RootPart then  
+            RootPart.CFrame = Config.SavedLobbyPosition  
+        end  
 
     end
 )
@@ -1171,9 +1212,9 @@ CreateButton(
     "🗺 Сохранить позицию как Map",
     function()
 
-        if RootPart then
-            Config.SavedMapPosition = RootPart.CFrame
-        end
+        if RootPart then  
+            Config.SavedMapPosition = RootPart.CFrame  
+        end  
 
     end
 )
@@ -1183,37 +1224,38 @@ CreateButton(
     "🗺 Tp на Map",
     function()
 
-        if Config.SavedMapPosition and RootPart then
-            RootPart.CFrame = Config.SavedMapPosition
-            return
-        end
+        if Config.SavedMapPosition and RootPart then  
+            RootPart.CFrame = Config.SavedMapPosition  
+            return  
+        end  
 
-        local Map = workspace:FindFirstChild("Map")
+        local Map = workspace:FindFirstChild("Map")  
 
-        if Map and Map:IsA("Model") then
+        if Map and Map:IsA("Model") then  
 
-            local cf = Map:GetPivot()
+            local cf = Map:GetPivot()  
 
-            RootPart.CFrame = cf + Vector3.new(0,5,0)
+            RootPart.CFrame = cf + Vector3.new(0,5,0)  
 
-        else
+        else  
 
-            local Baseplate = workspace:FindFirstChild("Baseplate")
+            local Baseplate = workspace:FindFirstChild("Baseplate")  
 
-            if Baseplate then
+            if Baseplate then  
 
-                RootPart.CFrame =
-                    Baseplate.CFrame
-                    + Vector3.new(0,10,0)
+                RootPart.CFrame =  
+                    Baseplate.CFrame  
+                    + Vector3.new(0,10,0)  
 
-            end
-        end
+            end  
+        end  
     end
 )
 
-------------------------------------------------------------
+
+---
+
 -- PLAYER SELECTOR
-------------------------------------------------------------
 
 CreateTitle(TeleportPage,"Выбор игрока")
 
@@ -1231,40 +1273,40 @@ PlayerLayout.Parent = PlayerList
 
 local function RefreshPlayers()
 
-    for _,obj in ipairs(PlayerList:GetChildren()) do
-        if obj:IsA("TextButton") then
-            obj:Destroy()
-        end
-    end
+    for _,obj in ipairs(PlayerList:GetChildren()) do  
+        if obj:IsA("TextButton") then  
+            obj:Destroy()  
+        end  
+    end  
 
-    for _,player in ipairs(Players:GetPlayers()) do
+    for _,player in ipairs(Players:GetPlayers()) do  
 
-        if player ~= LocalPlayer then
+        if player ~= LocalPlayer then  
 
-            local Button = Instance.new("TextButton")
-            Button.Size = UDim2.new(1,-8,0,30)
-            Button.BackgroundColor3 = Color3.fromRGB(35,35,43)
-            Button.Text = player.DisplayName.."  @"..player.Name
-            Button.TextColor3 = Color3.new(1,1,1)
-            Button.Font = Enum.Font.Gotham
-            Button.TextSize = 11
-            Button.Parent = PlayerList
+            local Button = Instance.new("TextButton")  
+            Button.Size = UDim2.new(1,-8,0,30)  
+            Button.BackgroundColor3 = Color3.fromRGB(35,35,43)  
+            Button.Text = player.DisplayName.."  @"..player.Name  
+            Button.TextColor3 = Color3.new(1,1,1)  
+            Button.Font = Enum.Font.Gotham  
+            Button.TextSize = 11  
+            Button.Parent = PlayerList  
 
-            Instance.new("UICorner",Button).CornerRadius = UDim.new(0,6)
+            Instance.new("UICorner",Button).CornerRadius = UDim.new(0,6)  
 
-            Button.MouseButton1Click:Connect(function()
+            Button.MouseButton1Click:Connect(function()  
 
-                Config.SelectedPlayer = player
+                Config.SelectedPlayer = player  
 
-                for _,b in ipairs(PlayerList:GetChildren()) do
-                    if b:IsA("TextButton") then
-                        b.BackgroundColor3 = Color3.fromRGB(35,35,43)
-                    end
-                end
+                for _,b in ipairs(PlayerList:GetChildren()) do  
+                    if b:IsA("TextButton") then  
+                        b.BackgroundColor3 = Color3.fromRGB(35,35,43)  
+                    end  
+                end  
 
-                Button.BackgroundColor3 = Theme.Accent
-            end)
-        end
+                Button.BackgroundColor3 = Theme.Accent  
+            end)  
+        end  
     end
 end
 
@@ -1273,9 +1315,10 @@ RefreshPlayers()
 Players.PlayerAdded:Connect(RefreshPlayers)
 Players.PlayerRemoving:Connect(RefreshPlayers)
 
-------------------------------------------------------------
+
+---
+
 -- FLING PAGE
-------------------------------------------------------------
 
 local FlingPage = Pages["💨 Fling"]
 
@@ -1283,30 +1326,30 @@ CreateTitle(FlingPage,"Fling / Physics Test")
 
 local function FlingPlayer(player)
 
-    if not player
-    or not player.Character
-    or not player.Character:FindFirstChild("HumanoidRootPart") then
-        return
-    end
+    if not player  
+    or not player.Character  
+    or not player.Character:FindFirstChild("HumanoidRootPart") then  
+        return  
+    end  
 
-    local TargetRoot =
-        player.Character.HumanoidRootPart
+    local TargetRoot =  
+        player.Character.HumanoidRootPart  
 
-    local Force = Instance.new("BodyVelocity")
+    local Force = Instance.new("BodyVelocity")  
 
-    Force.MaxForce =
-        Vector3.new(1e5,1e5,1e5)
+    Force.MaxForce =  
+        Vector3.new(1e5,1e5,1e5)  
 
-    Force.Velocity =
-        Vector3.new(0,150,0)
+    Force.Velocity =  
+        Vector3.new(0,150,0)  
 
-    Force.Parent = TargetRoot
+    Force.Parent = TargetRoot  
 
-    task.delay(0.4,function()
+    task.delay(0.4,function()  
 
-        if Force then
-            Force:Destroy()
-        end
+        if Force then  
+            Force:Destroy()  
+        end  
 
     end)
 end
@@ -1316,9 +1359,9 @@ CreateButton(
     "💨 Fling выбранного",
     function()
 
-        if Config.SelectedPlayer then
-            FlingPlayer(Config.SelectedPlayer)
-        end
+        if Config.SelectedPlayer then  
+            FlingPlayer(Config.SelectedPlayer)  
+        end  
 
     end
 )
@@ -1328,36 +1371,37 @@ CreateButton(
     "💨 Fling всех NPC",
     function()
 
-        for _,obj in ipairs(workspace:GetDescendants()) do
+        for _,obj in ipairs(workspace:GetDescendants()) do  
 
-            if obj:IsA("Model")
-            and obj ~= Character
-            and obj:FindFirstChildOfClass("Humanoid")
-            and obj:FindFirstChild("HumanoidRootPart") then
+            if obj:IsA("Model")  
+            and obj ~= Character  
+            and obj:FindFirstChildOfClass("Humanoid")  
+            and obj:FindFirstChild("HumanoidRootPart") then  
 
-                local Player =
-                    Players:GetPlayerFromCharacter(obj)
+                local Player =  
+                    Players:GetPlayerFromCharacter(obj)  
 
-                if not Player then
-                    local Force = Instance.new("BodyVelocity")
-                    Force.MaxForce = Vector3.new(1e5,1e5,1e5)
-                    Force.Velocity = Vector3.new(0,150,0)
-                    Force.Parent = obj.HumanoidRootPart
+                if not Player then  
+                    local Force = Instance.new("BodyVelocity")  
+                    Force.MaxForce = Vector3.new(1e5,1e5,1e5)  
+                    Force.Velocity = Vector3.new(0,150,0)  
+                    Force.Parent = obj.HumanoidRootPart  
 
-                    task.delay(0.4,function()
-                        if Force then
-                            Force:Destroy()
-                        end
-                    end)
-                end
-            end
-        end
+                    task.delay(0.4,function()  
+                        if Force then  
+                            Force:Destroy()  
+                        end  
+                    end)  
+                end  
+            end  
+        end  
     end
 )
 
-------------------------------------------------------------
+
+---
+
 -- AUTOFARM PAGE
-------------------------------------------------------------
 
 local AutoFarmPage = Pages["💰 AutoFarm"]
 
@@ -1391,81 +1435,81 @@ CreateToggle(
     false,
     function(value)
 
-        Config.AutoWin = value
+        Config.AutoWin = value  
 
-        if value then
-            Config.Invisible = true
-            Config.Noclip = true
-        else
-            Config.Invisible = false
-            Config.Noclip = false
-        end
+        if value then  
+            Config.Invisible = true  
+            Config.Noclip = true  
+        else  
+            Config.Invisible = false  
+            Config.Noclip = false  
+        end  
 
     end
 )
 
 local function FindNearestCoin()
 
-    if not RootPart then
-        return nil
-    end
+    if not RootPart then  
+        return nil  
+    end  
 
-    local nearest = nil
-    local distance = math.huge
+    local nearest = nil  
+    local distance = math.huge  
 
-    for _,obj in ipairs(workspace:GetDescendants()) do
+    for _,obj in ipairs(workspace:GetDescendants()) do  
 
-        if obj:IsA("BasePart") then
+        if obj:IsA("BasePart") then  
 
-            local name = string.lower(obj.Name)
+            local name = string.lower(obj.Name)  
 
-            if string.find(name,"coin")
-            or string.find(name,"cash")
-            or string.find(name,"money") then
+            if string.find(name,"coin")  
+            or string.find(name,"cash")  
+            or string.find(name,"money") then  
 
-                local d =
-                    (RootPart.Position - obj.Position).Magnitude
+                local d =  
+                    (RootPart.Position - obj.Position).Magnitude  
 
-                if d < distance then
-                    distance = d
-                    nearest = obj
-                end
-            end
-        end
-    end
+                if d < distance then  
+                    distance = d  
+                    nearest = obj  
+                end  
+            end  
+        end  
+    end  
 
     return nearest
 end
 
 task.spawn(function()
 
-    while true do
+    while true do  
 
-        task.wait(2)
+        task.wait(2)  
 
-        if Config.AutoFarm and RootPart then
+        if Config.AutoFarm and RootPart then  
 
-            local coin = FindNearestCoin()
+            local coin = FindNearestCoin()  
 
-            if coin then
+            if coin then  
 
-                RootPart.CFrame =
-                    coin.CFrame
-                    + Vector3.new(0,3,0)
+                RootPart.CFrame =  
+                    coin.CFrame  
+                    + Vector3.new(0,3,0)  
 
-                CoinsCollected += 1
+                CoinsCollected += 1  
 
-                Counter.Text =
-                    "💰 Монет собрано: "..CoinsCollected
-            end
-        end
+                Counter.Text =  
+                    "💰 Монет собрано: "..CoinsCollected  
+            end  
+        end  
     end
-
 end)
 
-------------------------------------------------------------
+
+---
+
 -- TROLL PAGE
-------------------------------------------------------------
 
 local TrollPage = Pages["🎭 Troll"]
 
@@ -1473,17 +1517,17 @@ CreateTitle(TrollPage,"Troll / Emotes")
 
 local function PlayEmote(id)
 
-    if Humanoid then
+    if Humanoid then  
 
-        local Animation =
-            Instance.new("Animation")
+        local Animation =  
+            Instance.new("Animation")  
 
-        Animation.AnimationId = id
+        Animation.AnimationId = id  
 
-        local Track =
-            Humanoid:LoadAnimation(Animation)
+        local Track =  
+            Humanoid:LoadAnimation(Animation)  
 
-        Track:Play()
+        Track:Play()  
 
     end
 end
@@ -1550,14 +1594,14 @@ CreateToggle(
     false,
     function(value)
 
-        if not Character then return end
+        if not Character then return end  
 
-        local Head = Character:FindFirstChild("Head")
+        local Head = Character:FindFirstChild("Head")  
 
-        if Head then
-            Head.LocalTransparencyModifier =
-                value and 1 or 0
-        end
+        if Head then  
+            Head.LocalTransparencyModifier =  
+                value and 1 or 0  
+        end  
     end
 )
 
@@ -1567,16 +1611,16 @@ CreateToggle(
     false,
     function(value)
 
-        if not Character then return end
+        if not Character then return end  
 
-        local LeftLeg =
-            Character:FindFirstChild("LeftLowerLeg")
-            or Character:FindFirstChild("Left Leg")
+        local LeftLeg =  
+            Character:FindFirstChild("LeftLowerLeg")  
+            or Character:FindFirstChild("Left Leg")  
 
-        if LeftLeg and LeftLeg:IsA("BasePart") then
-            LeftLeg.LocalTransparencyModifier =
-                value and 1 or 0
-        end
+        if LeftLeg and LeftLeg:IsA("BasePart") then  
+            LeftLeg.LocalTransparencyModifier =  
+                value and 1 or 0  
+        end  
     end
 )
 
@@ -1586,39 +1630,40 @@ CreateToggle(
     false,
     function(value)
 
-        if not value then return end
+        if not value then return end  
 
-        task.spawn(function()
+        task.spawn(function()  
 
-            for i = 1,20 do
+            for i = 1,20 do  
 
-                if not Character then break end
+                if not Character then break end  
 
-                local Arm =
-                    Character:FindFirstChild("RightUpperArm")
-                    or Character:FindFirstChild("Right Arm")
+                local Arm =  
+                    Character:FindFirstChild("RightUpperArm")  
+                    or Character:FindFirstChild("Right Arm")  
 
-                if Arm then
+                if Arm then  
 
-                    Arm.CFrame =
-                        Arm.CFrame
-                        * CFrame.Angles(
-                            0,
-                            0,
-                            math.sin(i)*0.4
-                        )
-                end
+                    Arm.CFrame =  
+                        Arm.CFrame  
+                        * CFrame.Angles(  
+                            0,  
+                            0,  
+                            math.sin(i)*0.4  
+                        )  
+                end  
 
-                task.wait(0.05)
-            end
+                task.wait(0.05)  
+            end  
 
-        end)
+        end)  
     end
 )
 
-------------------------------------------------------------
+
+---
+
 -- COMBAT PAGE
-------------------------------------------------------------
 
 local CombatPage = Pages["⚔ Combat"]
 
@@ -1646,7 +1691,7 @@ CreateSlider(
     120,
     function(value)
 
-        Config.AimbotFOV = value
+        Config.AimbotFOV = value  
 
     end
 )
@@ -1659,7 +1704,7 @@ CreateSlider(
     50,
     function(value)
 
-        Config.Smoothness = value
+        Config.Smoothness = value  
 
     end
 )
@@ -1670,7 +1715,7 @@ CreateToggle(
     false,
     function(value)
 
-        Config.AimAssist = value
+        Config.AimAssist = value  
 
     end
 )
@@ -1681,10 +1726,10 @@ CreateToggle(
     false,
     function(value)
 
-        if value then
-            Config.ESP = true
-            UpdateESP()
-        end
+        if value then  
+            Config.ESP = true  
+            UpdateESP()  
+        end  
 
     end
 )
@@ -1694,60 +1739,61 @@ CreateButton(
     "🎯 Найти ближайшего NPC",
     function()
 
-        if not RootPart then return end
+        if not RootPart then return end  
 
-        local nearest
-        local distance = math.huge
+        local nearest  
+        local distance = math.huge  
 
-        for _,obj in ipairs(workspace:GetDescendants()) do
+        for _,obj in ipairs(workspace:GetDescendants()) do  
 
-            if obj:IsA("Model")
-            and obj ~= Character
-            and obj:FindFirstChildOfClass("Humanoid")
-            and obj:FindFirstChild("HumanoidRootPart") then
+            if obj:IsA("Model")  
+            and obj ~= Character  
+            and obj:FindFirstChildOfClass("Humanoid")  
+            and obj:FindFirstChild("HumanoidRootPart") then  
 
-                local player =
-                    Players:GetPlayerFromCharacter(obj)
+                local player =  
+                    Players:GetPlayerFromCharacter(obj)  
 
-                if not player then
+                if not player then  
 
-                    local d =
-                        (RootPart.Position -
-                        obj.HumanoidRootPart.Position).Magnitude
+                    local d =  
+                        (RootPart.Position -  
+                        obj.HumanoidRootPart.Position).Magnitude  
 
-                    if d < distance then
-                        distance = d
-                        nearest = obj
-                    end
-                end
-            end
-        end
+                    if d < distance then  
+                        distance = d  
+                        nearest = obj  
+                    end  
+                end  
+            end  
+        end  
 
-        if nearest then
+        if nearest then  
 
-            local Highlight =
-                Instance.new("Highlight")
+            local Highlight =  
+                Instance.new("Highlight")  
 
-            Highlight.FillColor =
-                Color3.fromRGB(255,80,80)
+            Highlight.FillColor =  
+                Color3.fromRGB(255,80,80)  
 
-            Highlight.Parent = nearest
+            Highlight.Parent = nearest  
 
-            task.delay(3,function()
+            task.delay(3,function()  
 
-                if Highlight then
-                    Highlight:Destroy()
-                end
+                if Highlight then  
+                    Highlight:Destroy()  
+                end  
 
-            end)
-        end
+            end)  
+        end  
 
     end
 )
 
-------------------------------------------------------------
+
+---
+
 -- SETTINGS PAGE
-------------------------------------------------------------
 
 local SettingsPage = Pages["⚙ Settings"]
 
@@ -1755,19 +1801,19 @@ CreateTitle(SettingsPage,"Settings")
 
 local function ApplyTheme(name)
 
-    if not Themes[name] then
-        return
-    end
+    if not Themes[name] then  
+        return  
+    end  
 
-    Config.Theme = name
-    Theme = Themes[name]
+    Config.Theme = name  
+    Theme = Themes[name]  
 
-    Main.BackgroundColor3 = Theme.Main
-    Top.BackgroundColor3 = Theme.Secondary
-    TopFix.BackgroundColor3 = Theme.Secondary
-    Sidebar.BackgroundColor3 = Theme.Secondary
+    Main.BackgroundColor3 = Theme.Main  
+    Top.BackgroundColor3 = Theme.Secondary  
+    TopFix.BackgroundColor3 = Theme.Secondary  
+    Sidebar.BackgroundColor3 = Theme.Secondary  
 
-    SLogo.BackgroundColor3 = Theme.Accent
+    SLogo.BackgroundColor3 = Theme.Accent  
     Stroke.Color = Theme.Accent
 end
 
@@ -1843,15 +1889,15 @@ CreateSlider(
     1,
     function(value)
 
-        Config.MenuScale = value
+        Config.MenuScale = value  
 
-        Main.Size =
-            UDim2.new(
-                0,
-                700*value,
-                0,
-                500*value
-            )
+        Main.Size =  
+            UDim2.new(  
+                0,  
+                700*value,  
+                0,  
+                500*value  
+            )  
     end
 )
 
@@ -1860,21 +1906,22 @@ CreateButton(
     "🔄 Сбросить настройки",
     function()
 
-        Config.Theme = "Purple"
-        Config.Language = "RU"
-        Config.MenuScale = 1
+        Config.Theme = "Purple"  
+        Config.Language = "RU"  
+        Config.MenuScale = 1  
 
-        ApplyTheme("Purple")
+        ApplyTheme("Purple")  
 
-        Main.Size =
-            UDim2.new(0,700,0,500)
+        Main.Size =  
+            UDim2.new(0,700,0,500)  
 
     end
 )
 
-------------------------------------------------------------
+
+---
+
 -- BIO PAGE
-------------------------------------------------------------
 
 local BioPage = Pages["ℹ Bio"]
 
@@ -1882,16 +1929,16 @@ CreateTitle(BioPage,"SkyHub")
 
 local function BioLabel(text)
 
-    local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(1,-20,0,45)
-    Label.BackgroundColor3 = Color3.fromRGB(28,28,35)
-    Label.Text = text
-    Label.TextColor3 = Color3.fromRGB(230,230,235)
-    Label.Font = Enum.Font.GothamMedium
-    Label.TextSize = 13
-    Label.Parent = BioPage
+    local Label = Instance.new("TextLabel")  
+    Label.Size = UDim2.new(1,-20,0,45)  
+    Label.BackgroundColor3 = Color3.fromRGB(28,28,35)  
+    Label.Text = text  
+    Label.TextColor3 = Color3.fromRGB(230,230,235)  
+    Label.Font = Enum.Font.GothamMedium  
+    Label.TextSize = 13  
+    Label.Parent = BioPage  
 
-    Instance.new("UICorner",Label).CornerRadius = UDim.new(0,8)
+    Instance.new("UICorner",Label).CornerRadius = UDim.new(0,8)  
 
     return Label
 end
@@ -1904,9 +1951,10 @@ BioLabel("💬 Discord: скоро будет добавлен")
 BioLabel("⚙ Version: 1.0.0")
 BioLabel("✨ Спасибо за использование SkyHub!")
 
-------------------------------------------------------------
+
+---
+
 -- MINIMIZE
-------------------------------------------------------------
 
 local Mini = Instance.new("TextButton")
 Mini.Size = UDim2.new(0,55,0,55)
@@ -1924,21 +1972,20 @@ Instance.new("UICorner",Mini).CornerRadius = UDim.new(0,15)
 
 Close.MouseButton1Click:Connect(function()
 
-    Main.Visible = false
+    Main.Visible = false  
     Mini.Visible = true
-
 end)
 
 Mini.MouseButton1Click:Connect(function()
 
-    Main.Visible = true
+    Main.Visible = true  
     Mini.Visible = false
-
 end)
 
-------------------------------------------------------------
+
+---
+
 -- DRAGGING
-------------------------------------------------------------
 
 local Dragging = false
 local DragStart
@@ -1946,125 +1993,127 @@ local StartPosition
 
 Top.InputBegan:Connect(function(input)
 
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
+    if input.UserInputType == Enum.UserInputType.MouseButton1  
+    or input.UserInputType == Enum.UserInputType.Touch then  
 
-        Dragging = true
-        DragStart = input.Position
-        StartPosition = Main.Position
+        Dragging = true  
+        DragStart = input.Position  
+        StartPosition = Main.Position  
 
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
 
-    if Dragging then
+    if Dragging then  
 
-        if input.UserInputType == Enum.UserInputType.MouseMovement
-        or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseMovement  
+        or input.UserInputType == Enum.UserInputType.Touch then  
 
-            local Delta =
-                input.Position - DragStart
+            local Delta =  
+                input.Position - DragStart  
 
-            Main.Position =
-                UDim2.new(
-                    StartPosition.X.Scale,
-                    StartPosition.X.Offset + Delta.X,
-                    StartPosition.Y.Scale,
-                    StartPosition.Y.Offset + Delta.Y
-                )
-        end
+            Main.Position =  
+                UDim2.new(  
+                    StartPosition.X.Scale,  
+                    StartPosition.X.Offset + Delta.X,  
+                    StartPosition.Y.Scale,  
+                    StartPosition.Y.Offset + Delta.Y  
+                )  
+        end  
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
 
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
+    if input.UserInputType == Enum.UserInputType.MouseButton1  
+    or input.UserInputType == Enum.UserInputType.Touch then  
 
-        Dragging = false
+        Dragging = false  
 
     end
 end)
 
-------------------------------------------------------------
+
+---
+
 -- HOTKEY
-------------------------------------------------------------
 
 UserInputService.InputBegan:Connect(function(input,processed)
 
-    if processed then return end
+    if processed then return end  
 
-    if input.KeyCode == Enum.KeyCode.RightShift then
+    if input.KeyCode == Enum.KeyCode.RightShift then  
 
-        Main.Visible = not Main.Visible
-        Mini.Visible = not Main.Visible
+        Main.Visible = not Main.Visible  
+        Mini.Visible = not Main.Visible  
 
     end
 end)
 
-------------------------------------------------------------
+
+---
+
 -- CHARACTER UPDATES
-------------------------------------------------------------
 
 RunService.RenderStepped:Connect(function()
 
-    if not Character then
-        return
+    if not Character then  
+        return  
+    end  
+
+    if Config.Invisible then  
+
+        for _,obj in ipairs(Character:GetDescendants()) do  
+
+            if obj:IsA("BasePart") then  
+                obj.LocalTransparencyModifier = 1  
+            end  
+
+        end  
+    end  
+
+    if Config.Glow then  
+
+        if not Character:FindFirstChild("SkyHubGlow") then  
+
+            local Highlight = Instance.new("Highlight")  
+
+            Highlight.Name = "SkyHubGlow"  
+            Highlight.FillColor = Color3.fromRGB(0,200,255)  
+            Highlight.OutlineColor = Color3.fromRGB(0,220,255)  
+            Highlight.FillTransparency = 0.65  
+
+            Highlight.Parent = Character  
+
+        end  
     end
-
-    if Config.Invisible then
-
-        for _,obj in ipairs(Character:GetDescendants()) do
-
-            if obj:IsA("BasePart") then
-                obj.LocalTransparencyModifier = 1
-            end
-
-        end
-    end
-
-    if Config.Glow then
-
-        if not Character:FindFirstChild("SkyHubGlow") then
-
-            local Highlight = Instance.new("Highlight")
-
-            Highlight.Name = "SkyHubGlow"
-            Highlight.FillColor = Color3.fromRGB(0,200,255)
-            Highlight.OutlineColor = Color3.fromRGB(0,220,255)
-            Highlight.FillTransparency = 0.65
-
-            Highlight.Parent = Character
-
-        end
-    end
-
 end)
 
-------------------------------------------------------------
+
+---
+
 -- DEFAULT PAGE
-------------------------------------------------------------
 
 SelectPage("👤 Player")
 
-------------------------------------------------------------
+
+---
+
 -- STARTUP NOTIFICATION
-------------------------------------------------------------
 
 task.wait(1)
 
 pcall(function()
 
-    StarterGui:SetCore(
-        "SendNotification",
-        {
-            Title = "🚀 SkyHub",
-            Text = "SkyHub успешно запущен!",
-            Duration = 4
-        }
+    StarterGui:SetCore(  
+        "SendNotification",  
+        {  
+            Title = "🚀 SkyHub",  
+            Text = "SkyHub успешно запущен!",  
+            Duration = 4  
+        }  
     )
-
 end)
 
 print("================================")
