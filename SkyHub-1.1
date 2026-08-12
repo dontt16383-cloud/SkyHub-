@@ -1,5 +1,6 @@
--- SkyHub Premium (полный код, все кнопки работают)
+-- SkyHub Premium (полный рабочий код)
 -- Автор: dont16383
+-- Все функции активны, кнопки реагируют
 
 local Players=game:GetService("Players")
 local Lighting=game:GetService("Lighting")
@@ -7,12 +8,10 @@ local RunService=game:GetService("RunService")
 local UIS=game:GetService("UserInputService")
 local LP=Players.LocalPlayer
 local WS=game:GetService("Workspace")
-
 local D_WALK=16
 local D_JUMP=50
 local D_SCALE=1.0
 local D_INVIS=false
-
 local cWalk=D_WALK
 local cJump=D_JUMP
 local cScale=D_SCALE
@@ -39,22 +38,16 @@ local flyBV,flyGyro,flyConn
 local flyPulse=0
 local lobbyPos=nil
 local mapPos=nil
-
--- AutoFarm
 local autoFarm=false
 local coins=0
 local farmConn=nil
 local autoWin=false
-
--- Troll
 local headless=false
 local korblox=false
 local jerk=false
 local jerkConn=nil
 local animTrack=nil
 local soundObj=nil
-
--- Combat
 local combatMode="Sheriff"
 local sAimbot=false
 local sFOV=30
@@ -75,19 +68,16 @@ local function getHum()
     local c=LP.Character
     return c and c:FindFirstChild("Humanoid")
 end
-
 local function getRoot()
     local c=LP.Character
     if not c then return nil end
     return c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("Torso")
 end
-
 local function applyInvis(p)
     if p:IsA("BasePart") then
         p.Transparency = cInvis and 1 or 0
     end
 end
-
 local function applySettings()
     local hum=getHum()
     if not hum then return end
@@ -111,7 +101,6 @@ local function applySettings()
         end
     end
 end
-
 local function trackInvis(char)
     char.DescendantAdded:Connect(function(p)
         if cInvis then applyInvis(p) end
@@ -120,7 +109,6 @@ local function trackInvis(char)
         end
     end)
 end
-
 local function startFly()
     local root=getRoot()
     local hum=getHum()
@@ -167,7 +155,6 @@ local function startFly()
         end
     end)
 end
-
 local function stopFly()
     if flyBV then flyBV:Destroy(); flyBV=nil end
     if flyGyro then flyGyro:Destroy(); flyGyro=nil end
@@ -178,7 +165,6 @@ local function stopFly()
         hum.AutoRotate=true
     end
 end
-
 local function updateNoclip()
     local char=LP.Character
     if not char then return end
@@ -188,7 +174,6 @@ local function updateNoclip()
         end
     end
 end
-
 local function applySky(preset)
     skyPreset=preset
     local sky=Lighting:FindFirstChild("Sky") or Instance.new("Sky")
@@ -205,7 +190,6 @@ local function applySky(preset)
         end
     end
 end
-
 local function applyWeather(preset)
     weatherPreset=preset
     local fogEnd={Clear=1000,Rain=300,Foggy=150}
@@ -219,12 +203,10 @@ local function applyWeather(preset)
     Lighting.Ambient=ambient[preset] or Color3.new(0.5,0.5,0.5)
     Lighting.Climate=climate[preset] or Enum.Climate.Default
 end
-
 local function applyTime(v)
     timeOfDay=v
     Lighting.ClockTime=v
 end
-
 local function applyCharColor(col)
     charColor=col
     local char=LP.Character
@@ -236,7 +218,6 @@ local function applyCharColor(col)
         end
     end
 end
-
 local function updateGlow()
     if glowObj then glowObj:Destroy(); glowObj=nil end
     if not glow then return end
@@ -251,7 +232,6 @@ local function updateGlow()
     glowObj.Range=10
     glowObj.Enabled=true
 end
-
 local function getRole(p)
     if p==LP then return nil end
     if p.Team then
@@ -267,7 +247,6 @@ local function getRole(p)
     end
     return "Innocent"
 end
-
 local function updateHighlight(p)
     if p==LP then return end
     if not espP then
@@ -287,11 +266,9 @@ local function updateHighlight(p)
     hl.FillTransparency=0.4
     ph[p]=hl
 end
-
 local function refreshAll()
     for _,p in ipairs(Players:GetPlayers()) do updateHighlight(p) end
 end
-
 local function updateGun(obj)
     if not espG then
         if gh[obj] then gh[obj]:Destroy(); gh[obj]=nil end
@@ -315,11 +292,9 @@ local function updateGun(obj)
         end
     end
 end
-
 local function scanGuns()
     for _,o in ipairs(workspace:GetDescendants()) do updateGun(o) end
 end
-
 local function getOther()
     local list={}
     for _,p in ipairs(Players:GetPlayers()) do
@@ -327,7 +302,6 @@ local function getOther()
     end
     return list
 end
-
 local function findRole(role)
     for _,p in ipairs(Players:GetPlayers()) do
         if p~=LP and getRole(p)==role then
@@ -336,7 +310,6 @@ local function findRole(role)
     end
     return nil
 end
-
 local function tpPlayer(p)
     local ch=p.Character
     if not ch then return end
@@ -349,7 +322,6 @@ local function tpPlayer(p)
         myRoot.CFrame=root.CFrame+Vector3.new(0,3,0)
     end
 end
-
 local function tpLobby()
     if lobbyPos then
         local my=LP.Character
@@ -359,7 +331,6 @@ local function tpLobby()
         end
     end
 end
-
 local function tpMap()
     if mapPos then
         local my=LP.Character
@@ -375,7 +346,6 @@ local function tpMap()
         end
     end
 end
-
 local function fling(p,force)
     local ch=p.Character
     if ch then
@@ -390,13 +360,11 @@ local function fling(p,force)
         end
     end
 end
-
 local function flingAll(force)
     for _,p in ipairs(getOther()) do
         fling(p,force)
     end
 end
-
 local function findClosest(roleFilter)
     local cam=workspace.CurrentCamera
     if not cam then return nil end
@@ -421,7 +389,6 @@ local function findClosest(roleFilter)
     end
     return best
 end
-
 local function aimbot(target)
     if not target then return end
     local cam=workspace.CurrentCamera
@@ -437,7 +404,6 @@ local function aimbot(target)
     local smooth=math.clamp(1/(sSmooth+1),0.05,1)
     cam.CFrame=currentCF:Lerp(targetCF,smooth)
 end
-
 local function triggerBot()
     local mouse=game:GetService("Players").LocalPlayer:GetMouse()
     if mouse then
@@ -446,7 +412,6 @@ local function triggerBot()
         mouse:Button1Up()
     end
 end
-
 local function kill(p)
     local ch=p.Character
     if ch then
@@ -454,11 +419,9 @@ local function kill(p)
         if hum then hum.Health=0 end
     end
 end
-
 local function killAll()
     for _,p in ipairs(getOther()) do kill(p) end
 end
-
 local function getCoin()
     local char=LP.Character
     if not char then return nil end
@@ -466,7 +429,7 @@ local function getCoin()
     if not root then return nil end
     local best=nil
     local bestDist=math.huge
-    for _,obj in ipairs(Workspace:GetDescendants()) do
+    for _,obj in ipairs(WS:GetDescendants()) do
         if obj:IsA("BasePart") and (obj.Name:lower():find("coin") or obj.Name:lower():find("money")) then
             local dist=(obj.Position-root.Position).Magnitude
             if dist<bestDist then
@@ -477,7 +440,6 @@ local function getCoin()
     end
     return best
 end
-
 local function collectCoin()
     local coin=getCoin()
     if coin then
@@ -491,32 +453,20 @@ local function collectCoin()
         end
     end
 end
-
 local function startFarm()
     if farmConn then farmConn:Disconnect() end
     farmConn=RunService.Heartbeat:Connect(function()
         if autoFarm then collectCoin() end
     end)
 end
-
 local function stopFarm()
     if farmConn then farmConn:Disconnect(); farmConn=nil end
 end
-
 local function playEmote(name)
     local hum=getHum()
     if hum then pcall(function() hum:PlayEmote(name) end) end
 end
-
-local animIds={
-    ["T-Pose"]="rbxassetid://5598284032",
-    ["Zombie"]="rbxassetid://6162184239",
-    ["Robot"]="rbxassetid://6162187066",
-    ["Floss"]="rbxassetid://6162190332",
-    ["Sit"]="rbxassetid://180436356",
-    ["Point"]="rbxassetid://180436356",
-}
-
+local animIds={["T-Pose"]="rbxassetid://5598284032",["Zombie"]="rbxassetid://6162184239",["Robot"]="rbxassetid://6162187066",["Floss"]="rbxassetid://6162190332",["Sit"]="rbxassetid://180436356",["Point"]="rbxassetid://180436356"}
 local function playAnim(name)
     local hum=getHum()
     if not hum then return end
@@ -530,7 +480,6 @@ local function playAnim(name)
         animTrack=track
     end
 end
-
 local function toggleKorblox(state)
     korblox=state
     local char=LP.Character
@@ -538,7 +487,6 @@ local function toggleKorblox(state)
     local leg=char:FindFirstChild("LeftLeg")
     if leg then leg.Transparency=state and 1 or 0 end
 end
-
 local function toggleHeadless(state)
     headless=state
     local char=LP.Character
@@ -546,7 +494,6 @@ local function toggleHeadless(state)
     local head=char:FindFirstChild("Head")
     if head then head.Transparency=state and 1 or 0 end
 end
-
 local function toggleJerk(state)
     jerk=state
     if jerkConn then jerkConn:Disconnect(); jerkConn=nil end
@@ -565,16 +512,7 @@ local function toggleJerk(state)
         end)
     end
 end
-
-local songs={
-    ["Макс Корж - Мотылёк"]="rbxassetid://1839116943",
-    ["Okean Elzy - Обійми"]="rbxassetid://1839116944",
-    ["Imagine Dragons - Believer"]="rbxassetid://1839116945",
-    ["Моргенштерн - Малышка"]="rbxassetid://1839116946",
-    ["Антитіла - TDME"]="rbxassetid://1839116947",
-    ["Ed Sheeran - Shape of You"]="rbxassetid://1839116948",
-}
-
+local songs={["Макс Корж - Мотылёк"]="rbxassetid://1839116943",["Okean Elzy - Обійми"]="rbxassetid://1839116944",["Imagine Dragons - Believer"]="rbxassetid://1839116945",["Моргенштерн - Малышка"]="rbxassetid://1839116946",["Антитіла - TDME"]="rbxassetid://1839116947",["Ed Sheeran - Shape of You"]="rbxassetid://1839116948"}
 local function playSong(name)
     if soundObj then soundObj:Destroy(); soundObj=nil end
     local id=songs[name]
@@ -585,17 +523,14 @@ local function playSong(name)
         soundObj:Play()
     end
 end
-
 local texts={
     ru={title="SkyHub",tabPlayer="Игрок",tabESP="ESP",tabVisual="Визуал",tabSettings="Настройки",tabBio="Bio",tabTeleport="📍 Телепорт",tabFling="🌀 Флинг",tabAutoFarm="💰 AutoFarm",tabTroll="🎭 Troll",tabCombat="⚔ Combat",walkSpeed="Скорость бега",jumpPower="Сила прыжка",scale="Размер",invisible="Невидимость",fly="Полет",flySpeed="Скорость полета",flyAnim="Анимация полета",infinityJump="Бесконечный прыжок",noclip="Noclip",reset="🔄 Сбросить",espPlayers="Подсветка игроков",espGun="Подсветка оружия",settingsColor="Цвет меню",settingsLang="Язык",settingsSize="Размер меню",decrease="−",increase="+",skybox="Небо",weather="Погода",time="Время суток",charColor="Цвет персонажа",glow="Свечение",defaultSky="Стандарт",sunset="Закат",night="Ночь",space="Космос",clear="Ясно",rain="Дождь",foggy="Туман",bioTitle="📌 Мои контакты",tg="Telegram: @kazobl",tgChannel="Telegram-канал: @SkyHub_Deltax",discord="Discord: (скоро)",credit="👑 By dont16383",tpTo="Tp к игроку",tpMurder="Tp к убийце",tpSheriff="Tp к шерифу",tpLobby="Tp в лобби",tpMap="Tp на карту",fling="Флинг игрока",flingMurder="Флинг убийцы",flingSheriff="Флинг шерифа",flingAll="Флинг всех",autoFarmCoins="AutoFarm Coins",coinsEarned="Заработано монет: ",autoWin="Auto win round",emotes="Эмоции",animations="Анимации",korblox="Korblox",headless="Headless",jerk="JERK",songs="Песни",combatMode="Режим:",sheriff="Шериф",murder="Убийца",innocent="Невинный",aimbot="Aimbot",aimbotFOV="Aimbot FOV",aimbotSmooth="Aimbot Smoothness",silentAim="Silent Aim",triggerBot="Trigger Bot",autoKill="Auto Kill",wallHack="Wall Hack",autoShootMurder="Auto Shoot Murder",flingMurderBtn="Fling Murder",autoKillSheriff="Auto Kill Sheriff",killAll="Kill All",autoKillAll="Auto Kill All",flingSheriffBtn="Fling Sheriff",flingAllBtn="Fling All",knifeAimbot="Knife Throw Aimbot",knifeAnim="Knife v2 Animation",fakeSheriff="Fake Sheriff",killSelected="Kill selected player:",godMode="God Mode"},
     en={title="SkyHub",tabPlayer="Player",tabESP="ESP",tabVisual="Visual",tabSettings="Settings",tabBio="Bio",tabTeleport="📍 Teleport",tabFling="🌀 Fling",tabAutoFarm="💰 AutoFarm",tabTroll="🎭 Troll",tabCombat="⚔ Combat",walkSpeed="Walk Speed",jumpPower="Jump Power",scale="Scale",invisible="Invisible",fly="Fly",flySpeed="Fly Speed",flyAnim="Fly Animation",infinityJump="Infinity Jump",noclip="Noclip",reset="🔄 Reset",espPlayers="Highlight Players",espGun="Highlight Gun",settingsColor="Menu Color",settingsLang="Language",settingsSize="Menu Size",decrease="−",increase="+",skybox="Skybox",weather="Weather",time="Time of Day",charColor="Character Color",glow="Glow",defaultSky="Default",sunset="Sunset",night="Night",space="Space",clear="Clear",rain="Rain",foggy="Foggy",bioTitle="📌 My Contacts",tg="Telegram: @kazobl",tgChannel="Telegram Channel: @SkyHub_Deltax",discord="Discord: (soon)",credit="👑 By dont16383",tpTo="Tp to player",tpMurder="Tp to Murder",tpSheriff="Tp to Sheriff",tpLobby="Tp to Lobby",tpMap="Tp to Map",fling="Fling player",flingMurder="Fling Murder",flingSheriff="Fling Sheriff",flingAll="Fling All",autoFarmCoins="AutoFarm Coins",coinsEarned="Coins earned: ",autoWin="Auto win round",emotes="Emotes",animations="Animations",korblox="Korblox",headless="Headless",jerk="JERK",songs="Songs",combatMode="Mode:",sheriff="Sheriff",murder="Murder",innocent="Innocent",aimbot="Aimbot",aimbotFOV="Aimbot FOV",aimbotSmooth="Aimbot Smoothness",silentAim="Silent Aim",triggerBot="Trigger Bot",autoKill="Auto Kill",wallHack="Wall Hack",autoShootMurder="Auto Shoot Murder",flingMurderBtn="Fling Murder",autoKillSheriff="Auto Kill Sheriff",killAll="Kill All",autoKillAll="Auto Kill All",flingSheriffBtn="Fling Sheriff",flingAllBtn="Fling All",knifeAimbot="Knife Throw Aimbot",knifeAnim="Knife v2 Animation",fakeSheriff="Fake Sheriff",killSelected="Kill selected player:",godMode="God Mode"}
 }
 local function T(k) return texts[menuLang][k] or texts.ru[k] end
-
 local gui=Instance.new("ScreenGui")
 gui.Name="SkyHubGUI"
 gui.Parent=game:GetService("CoreGui")
-
 local frame=Instance.new("Frame")
 frame.Size=UDim2.new(0,480,0,580)
 frame.Position=UDim2.new(0.5,-240,0.5,-290)
@@ -605,7 +540,6 @@ frame.Active=true
 frame.Draggable=true
 frame.Parent=gui
 Instance.new("UICorner").Parent=frame
-
 local shadow=Instance.new("ImageLabel")
 shadow.Size=UDim2.new(1,12,1,12)
 shadow.Position=UDim2.new(0,-6,0,-6)
@@ -614,7 +548,6 @@ shadow.ImageColor3=Color3.new(0,0,0)
 shadow.ImageTransparency=0.7
 shadow.BackgroundTransparency=1
 shadow.Parent=frame
-
 local gradient=Instance.new("Frame")
 gradient.Size=UDim2.new(1,0,1,0)
 gradient.BackgroundTransparency=0.5
@@ -624,7 +557,6 @@ grad.Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.fromRGB(20,20,3
 grad.Rotation=45
 grad.Parent=gradient
 Instance.new("UICorner").Parent=gradient
-
 local function createLogo(p,s,pos)
     local c=Instance.new("Frame")
     c.Size=s
@@ -667,7 +599,6 @@ local function createLogo(p,s,pos)
     letter.Parent=c
     return c
 end
-
 local logo=createLogo(frame,UDim2.new(0,42,0,42),UDim2.new(0,8,0,4))
 local titleLabel=Instance.new("TextLabel")
 titleLabel.Size=UDim2.new(0.6,0,0,40)
@@ -679,7 +610,6 @@ titleLabel.Font=Enum.Font.GothamBold
 titleLabel.TextSize=26
 titleLabel.TextXAlignment=Enum.TextXAlignment.Left
 titleLabel.Parent=frame
-
 local closeBtn=Instance.new("TextButton")
 closeBtn.Size=UDim2.new(0,30,0,30)
 closeBtn.Position=UDim2.new(1,-40,0,7)
@@ -692,7 +622,6 @@ closeBtn.Parent=frame
 Instance.new("UICorner").Parent=closeBtn
 closeBtn.MouseEnter:Connect(function() closeBtn.BackgroundColor3=Color3.fromRGB(255,60,60) end)
 closeBtn.MouseLeave:Connect(function() closeBtn.BackgroundColor3=Color3.fromRGB(200,50,50) end)
-
 local iconBtn=Instance.new("TextButton")
 iconBtn.Size=UDim2.new(0,50,0,50)
 iconBtn.Position=UDim2.new(0,10,0,10)
@@ -705,13 +634,11 @@ Instance.new("UICorner").Parent=iconBtn
 local iconLogo=createLogo(iconBtn,UDim2.new(1,-4,1,-4),UDim2.new(0,2,0,2))
 iconBtn.MouseEnter:Connect(function() iconBtn.BackgroundColor3=Color3.fromRGB(50,50,80) end)
 iconBtn.MouseLeave:Connect(function() iconBtn.BackgroundColor3=menuColor end)
-
 local sidebar=Instance.new("Frame")
 sidebar.Size=UDim2.new(0,110,1,-50)
 sidebar.Position=UDim2.new(0,8,0,48)
 sidebar.BackgroundTransparency=1
 sidebar.Parent=frame
-
 local scrollSide=Instance.new("ScrollingFrame")
 scrollSide.Size=UDim2.new(1,0,1,0)
 scrollSide.BackgroundTransparency=1
@@ -720,12 +647,10 @@ scrollSide.ScrollBarImageColor3=Color3.new(1,1,1)
 scrollSide.ScrollBarImageTransparency=0.6
 scrollSide.CanvasSize=UDim2.new(0,0,0,0)
 scrollSide.Parent=sidebar
-
 local btnContainer=Instance.new("Frame")
 btnContainer.Size=UDim2.new(1,0,0,0)
 btnContainer.BackgroundTransparency=1
 btnContainer.Parent=scrollSide
-
 local tabsList={
     {id="Player",icon="◉",key="tabPlayer"},
     {id="ESP",icon="✦",key="tabESP"},
@@ -740,7 +665,6 @@ local tabsList={
 }
 local tabBtns={}
 local activeTab="Player"
-
 local function createTab(tab,idx)
     local btn=Instance.new("TextButton")
     btn.Size=UDim2.new(1,-6,0,38)
@@ -772,16 +696,13 @@ local function createTab(tab,idx)
     tabBtns[tab.id]=btn
     return btn
 end
-
 for i,t in ipairs(tabsList) do createTab(t,i) end
 scrollSide.CanvasSize=UDim2.new(0,0,0,3+#tabsList*44+10)
-
 local content=Instance.new("Frame")
 content.Size=UDim2.new(1,-130,1,-55)
 content.Position=UDim2.new(0,120,0,48)
 content.BackgroundTransparency=1
 content.Parent=frame
-
 local tabContainers={}
 for _,t in ipairs(tabsList) do
     local container=Instance.new("Frame")
@@ -804,7 +725,6 @@ for _,t in ipairs(tabsList) do
     inner.Parent=scroll
     tabContainers[t.id]={container=container,scroll=scroll,inner=inner,currentY=5}
 end
-
 local function createNumber(p,label,y,min,max,step,def,typ,cb)
     local row=Instance.new("Frame")
     row.Size=UDim2.new(1,-5,0,32)
@@ -877,7 +797,6 @@ local function createNumber(p,label,y,min,max,step,def,typ,cb)
         end
     end)
 end
-
 local function createToggle(p,label,y,def,cb)
     local row=Instance.new("Frame")
     row.Size=UDim2.new(1,-5,0,32)
@@ -916,7 +835,6 @@ local function createToggle(p,label,y,def,cb)
         cb(ns)
     end)
 end
-
 local function createButton(p,label,y,cb)
     local row=Instance.new("Frame")
     row.Size=UDim2.new(1,-5,0,32)
@@ -937,7 +855,6 @@ local function createButton(p,label,y,cb)
     btn.MouseLeave:Connect(function() btn.BackgroundColor3=Color3.fromRGB(70,70,120) end)
     btn.MouseButton1Click:Connect(cb)
 end
-
 local function createDropdown(p,label,y,items,def,cb)
     local row=Instance.new("Frame")
     row.Size=UDim2.new(1,-5,0,32)
@@ -997,7 +914,6 @@ local function createDropdown(p,label,y,items,def,cb)
     end)
     return dd
 end
-
 local function addTo(tabId,builder)
     local data=tabContainers[tabId]
     if not data then return end
@@ -1006,7 +922,6 @@ local function addTo(tabId,builder)
     data.currentY=ny or y
     data.scroll.CanvasSize=UDim2.new(0,0,0,data.currentY+20)
 end
-
 addTo("Player",function(p,y)
     createNumber(p,T("walkSpeed"),y,0,100,1,D_WALK,"integer",function(v)cWalk=v;applySettings()end)
     y=y+38
@@ -1034,7 +949,6 @@ addTo("Player",function(p,y)
     y=y+38
     return y
 end)
-
 addTo("ESP",function(p,y)
     createToggle(p,T("espPlayers"),y,false,function(s)espP=s;if s then refreshAll()else for p,h in pairs(ph)do h:Destroy();ph[p]=nil end end end)
     y=y+38
@@ -1042,7 +956,6 @@ addTo("ESP",function(p,y)
     y=y+38
     return y
 end)
-
 addTo("Visual",function(p,y)
     local skyLabel=Instance.new("TextLabel")
     skyLabel.Size=UDim2.new(1,0,0,28)
@@ -1171,7 +1084,6 @@ addTo("Visual",function(p,y)
     y=y+38
     return y
 end)
-
 addTo("Teleport",function(p,y)
     createDropdown(p,T("tpTo"),y,getOther(),"Выберите игрока",function(pl)tpPlayer(pl)end)
     y=y+38
@@ -1185,7 +1097,6 @@ addTo("Teleport",function(p,y)
     y=y+38
     return y
 end)
-
 addTo("Fling",function(p,y)
     createDropdown(p,T("fling"),y,getOther(),"Выберите игрока",function(pl)fling(pl,Vector3.new(0,150,0))end)
     y=y+38
@@ -1197,7 +1108,6 @@ addTo("Fling",function(p,y)
     y=y+38
     return y
 end)
-
 addTo("AutoFarm",function(p,y)
     createToggle(p,T("autoFarmCoins"),y,false,function(s)autoFarm=s;if s then startFarm()else stopFarm()end end)
     y=y+38
@@ -1232,7 +1142,6 @@ addTo("AutoFarm",function(p,y)
     y=y+38
     return y
 end)
-
 addTo("Troll",function(p,y)
     local emotes={"Wave","Point","Cheer","Dance","Laugh","Shrug","Blush","Pose"}
     createDropdown(p,T("emotes"),y,emotes,"Выберите",function(e)playEmote(e)end)
@@ -1251,7 +1160,6 @@ addTo("Troll",function(p,y)
     y=y+38
     return y
 end)
-
 addTo("Settings",function(p,y)
     local colorLabel=Instance.new("TextLabel")
     colorLabel.Size=UDim2.new(1,0,0,28)
@@ -1387,7 +1295,6 @@ addTo("Settings",function(p,y)
     y=y+36
     return y
 end)
-
 addTo("Bio",function(p,y)
     local bioTitle=Instance.new("TextLabel")
     bioTitle.Size=UDim2.new(1,0,0,30)
@@ -1421,7 +1328,6 @@ addTo("Bio",function(p,y)
     y=y+34
     return y
 end)
-
 addTo("Combat",function(p,y)
     local modeLabel=Instance.new("TextLabel")
     modeLabel.Size=UDim2.new(1,0,0,28)
@@ -1523,7 +1429,6 @@ addTo("Combat",function(p,y)
     innocentMode.Size=UDim2.new(1,0,0,iY+20)
     return y+20
 end)
-
 local combatLoop=RunService.Heartbeat:Connect(function()
     if sAimbot then
         local t=findClosest("Murder")
@@ -1570,13 +1475,11 @@ local combatLoop=RunService.Heartbeat:Connect(function()
         for _,p in ipairs(getOther())do kill(p)end
     end
 end)
-
 task.spawn(function()
     while wait(1)do
         if not gui then combatLoop:Disconnect()break end
     end
 end)
-
 function setActiveTab(id)
     activeTab=id
     for k,data in pairs(tabContainers)do
@@ -1592,7 +1495,6 @@ function setActiveTab(id)
         end
     end
 end
-
 local function savePos()
     local my=LP.Character
     if my then
@@ -1611,7 +1513,6 @@ local function savePos()
         end
     end
 end
-
 closeBtn.MouseButton1Click:Connect(function()
     frame.Visible=false
     iconBtn.Visible=true
@@ -1620,7 +1521,6 @@ iconBtn.MouseButton1Click:Connect(function()
     iconBtn.Visible=false
     frame.Visible=true
 end)
-
 local creditLabel=Instance.new("TextLabel")
 creditLabel.Size=UDim2.new(1,-130,0,20)
 creditLabel.Position=UDim2.new(0,120,1,-24)
@@ -1631,7 +1531,6 @@ creditLabel.Font=Enum.Font.Gotham
 creditLabel.TextSize=12
 creditLabel.TextXAlignment=Enum.TextXAlignment.Center
 creditLabel.Parent=frame
-
 LP.CharacterAdded:Connect(function(ch)
     task.wait(0.3)
     applySettings()
@@ -1644,12 +1543,10 @@ LP.CharacterAdded:Connect(function(ch)
     if korblox then toggleKorblox(true)end
     savePos()
 end)
-
 if LP.Character then
     trackInvis(LP.Character)
     savePos()
 end
-
 Players.PlayerAdded:Connect(function(p)
     p.CharacterAdded:Connect(function()
         task.wait(0.3)
@@ -1660,18 +1557,15 @@ Players.PlayerAdded:Connect(function(p)
         updateHighlight(p)
     end
 end)
-
 Players.PlayerRemoving:Connect(function(p)
     if ph[p] then
         ph[p]:Destroy()
         ph[p]=nil
     end
 end)
-
 workspace.DescendantAdded:Connect(function(o)
     if espG then updateGun(o)end
 end)
-
 applySky(skyPreset)
 applyWeather(weatherPreset)
 applyTime(timeOfDay)
@@ -1679,5 +1573,4 @@ task.wait(0.5)
 applySettings()
 applyCharColor(charColor)
 updateGlow()
-
 print("SkyHub Premium загружен! By dont16383")
