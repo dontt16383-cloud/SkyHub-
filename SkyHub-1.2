@@ -1,0 +1,2074 @@
+--[[
+    🚀 SKYHUB
+    Roblox Studio LocalScript
+    Version: 1.0.0
+
+    Большой локальный хаб:
+    • Player
+    • ESP
+    • Visual
+    • Teleport
+    • Fling Test
+    • AutoFarm
+    • Troll
+    • Combat Training
+    • Settings
+    • Bio
+
+    Предназначено для собственной Roblox-игры / Studio.
+]]
+
+------------------------------------------------------------
+-- SERVICES
+------------------------------------------------------------
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local StarterGui = game:GetService("StarterGui")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+------------------------------------------------------------
+-- CHARACTER
+------------------------------------------------------------
+
+local Character
+local Humanoid
+local RootPart
+
+local function GetCharacter()
+    Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    Humanoid = Character:WaitForChild("Humanoid")
+    RootPart = Character:WaitForChild("HumanoidRootPart")
+end
+
+GetCharacter()
+
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(1)
+    GetCharacter()
+end)
+
+------------------------------------------------------------
+-- CONFIG
+------------------------------------------------------------
+
+local Config = {
+    Speed = 16,
+    JumpPower = 50,
+    CharacterScale = 1,
+
+    Invisible = false,
+    Fly = false,
+    FlySpeed = 60,
+    FlyAnimation = false,
+    InfiniteJump = false,
+    Noclip = false,
+
+    ESP = false,
+    WeaponESP = false,
+
+    Glow = false,
+
+    AutoFarm = false,
+    AutoWin = false,
+
+    MenuScale = 1,
+
+    Language = "RU",
+    Theme = "Purple",
+
+    SelectedPlayer = nil,
+
+    Sky = "Default",
+    Weather = "Clear",
+
+    SavedLobbyPosition = nil,
+    SavedMapPosition = nil
+}
+
+------------------------------------------------------------
+-- COLORS
+------------------------------------------------------------
+
+local Themes = {
+    Dark = {
+        Main = Color3.fromRGB(18,18,22),
+        Secondary = Color3.fromRGB(25,25,31),
+        Accent = Color3.fromRGB(90,90,100)
+    },
+
+    Blue = {
+        Main = Color3.fromRGB(14,20,30),
+        Secondary = Color3.fromRGB(20,30,45),
+        Accent = Color3.fromRGB(40,130,255)
+    },
+
+    Purple = {
+        Main = Color3.fromRGB(18,14,27),
+        Secondary = Color3.fromRGB(28,20,42),
+        Accent = Color3.fromRGB(145,70,255)
+    },
+
+    Green = {
+        Main = Color3.fromRGB(14,25,18),
+        Secondary = Color3.fromRGB(20,38,26),
+        Accent = Color3.fromRGB(60,210,110)
+    },
+
+    Red = {
+        Main = Color3.fromRGB(27,15,17),
+        Secondary = Color3.fromRGB(40,20,23),
+        Accent = Color3.fromRGB(230,65,75)
+    },
+
+    Gray = {
+        Main = Color3.fromRGB(28,28,28),
+        Secondary = Color3.fromRGB(38,38,38),
+        Accent = Color3.fromRGB(160,160,160)
+    }
+}
+
+local Theme = Themes[Config.Theme]
+
+------------------------------------------------------------
+-- GUI
+------------------------------------------------------------
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SkyHub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+------------------------------------------------------------
+-- LOADING SCREEN
+------------------------------------------------------------
+
+local Loading = Instance.new("Frame")
+Loading.Size = UDim2.fromScale(1,1)
+Loading.BackgroundColor3 = Color3.fromRGB(8,8,12)
+Loading.BorderSizePixel = 0
+Loading.Parent = ScreenGui
+
+local Logo = Instance.new("TextLabel")
+Logo.Size = UDim2.new(0,300,0,100)
+Logo.Position = UDim2.fromScale(0.5,0.4)
+Logo.AnchorPoint = Vector2.new(0.5,0.5)
+Logo.BackgroundTransparency = 1
+Logo.Text = "S"
+Logo.TextColor3 = Color3.fromRGB(160,80,255)
+Logo.Font = Enum.Font.GothamBlack
+Logo.TextSize = 90
+Logo.Parent = Loading
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0,400,0,50)
+Title.Position = UDim2.fromScale(0.5,0.51)
+Title.AnchorPoint = Vector2.new(0.5,0.5)
+Title.BackgroundTransparency = 1
+Title.Text = "SKYHUB"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 28
+Title.Parent = Loading
+
+local BarBack = Instance.new("Frame")
+BarBack.Size = UDim2.new(0,350,0,8)
+BarBack.Position = UDim2.fromScale(0.5,0.61)
+BarBack.AnchorPoint = Vector2.new(0.5,0.5)
+BarBack.BackgroundColor3 = Color3.fromRGB(35,35,42)
+BarBack.BorderSizePixel = 0
+BarBack.Parent = Loading
+
+Instance.new("UICorner",BarBack).CornerRadius = UDim.new(1,0)
+
+local Bar = Instance.new("Frame")
+Bar.Size = UDim2.new(0,0,1,0)
+Bar.BackgroundColor3 = Color3.fromRGB(145,70,255)
+Bar.BorderSizePixel = 0
+Bar.Parent = BarBack
+
+Instance.new("UICorner",Bar).CornerRadius = UDim.new(1,0)
+
+local LoadingText = Instance.new("TextLabel")
+LoadingText.Size = UDim2.new(0,400,0,30)
+LoadingText.Position = UDim2.fromScale(0.5,0.66)
+LoadingText.AnchorPoint = Vector2.new(0.5,0.5)
+LoadingText.BackgroundTransparency = 1
+LoadingText.Text = "Loading SkyHub..."
+LoadingText.TextColor3 = Color3.fromRGB(170,170,180)
+LoadingText.Font = Enum.Font.Gotham
+LoadingText.TextSize = 14
+LoadingText.Parent = Loading
+
+for i = 1,100 do
+    Bar.Size = UDim2.new(i/100,0,1,0)
+    LoadingText.Text = "Loading SkyHub... "..i.."%"
+    task.wait(0.01)
+end
+
+task.wait(0.3)
+
+TweenService:Create(
+    Loading,
+    TweenInfo.new(0.5),
+    {BackgroundTransparency = 1}
+):Play()
+
+task.wait(0.5)
+Loading:Destroy()
+
+------------------------------------------------------------
+-- MAIN WINDOW
+------------------------------------------------------------
+
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.new(0,700,0,500)
+Main.Position = UDim2.fromScale(0.5,0.5)
+Main.AnchorPoint = Vector2.new(0.5,0.5)
+Main.BackgroundColor3 = Theme.Main
+Main.BorderSizePixel = 0
+Main.Parent = ScreenGui
+
+Instance.new("UICorner",Main).CornerRadius = UDim.new(0,14)
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Theme.Accent
+Stroke.Transparency = 0.65
+Stroke.Thickness = 1
+Stroke.Parent = Main
+
+------------------------------------------------------------
+-- TOP BAR
+------------------------------------------------------------
+
+local Top = Instance.new("Frame")
+Top.Size = UDim2.new(1,0,0,55)
+Top.BackgroundColor3 = Theme.Secondary
+Top.BorderSizePixel = 0
+Top.Parent = Main
+
+Instance.new("UICorner",Top).CornerRadius = UDim.new(0,14)
+
+local TopFix = Instance.new("Frame")
+TopFix.Size = UDim2.new(1,0,0,15)
+TopFix.Position = UDim2.new(0,0,1,-15)
+TopFix.BackgroundColor3 = Theme.Secondary
+TopFix.BorderSizePixel = 0
+TopFix.Parent = Top
+
+local SLogo = Instance.new("TextLabel")
+SLogo.Size = UDim2.new(0,45,0,45)
+SLogo.Position = UDim2.new(0,8,0,5)
+SLogo.BackgroundColor3 = Theme.Accent
+SLogo.Text = "S"
+SLogo.TextColor3 = Color3.new(1,1,1)
+SLogo.Font = Enum.Font.GothamBlack
+SLogo.TextSize = 27
+SLogo.Parent = Top
+
+Instance.new("UICorner",SLogo).CornerRadius = UDim.new(0,10)
+
+local HubTitle = Instance.new("TextLabel")
+HubTitle.Size = UDim2.new(0,250,0,30)
+HubTitle.Position = UDim2.new(0,65,0,8)
+HubTitle.BackgroundTransparency = 1
+HubTitle.Text = "SkyHub"
+HubTitle.TextColor3 = Color3.new(1,1,1)
+HubTitle.Font = Enum.Font.GothamBold
+HubTitle.TextSize = 20
+HubTitle.TextXAlignment = Enum.TextXAlignment.Left
+HubTitle.Parent = Top
+
+local Version = Instance.new("TextLabel")
+Version.Size = UDim2.new(0,250,0,20)
+Version.Position = UDim2.new(0,66,0,31)
+Version.BackgroundTransparency = 1
+Version.Text = "Universal Client • v1.0"
+Version.TextColor3 = Color3.fromRGB(140,140,150)
+Version.Font = Enum.Font.Gotham
+Version.TextSize = 11
+Version.TextXAlignment = Enum.TextXAlignment.Left
+Version.Parent = Top
+
+------------------------------------------------------------
+-- CLOSE BUTTON
+------------------------------------------------------------
+
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.new(0,40,0,40)
+Close.Position = UDim2.new(1,-48,0,7)
+Close.BackgroundColor3 = Color3.fromRGB(45,45,53)
+Close.Text = "×"
+Close.TextColor3 = Color3.new(1,1,1)
+Close.Font = Enum.Font.GothamBold
+Close.TextSize = 25
+Close.Parent = Top
+
+Instance.new("UICorner",Close).CornerRadius = UDim.new(0,9)
+
+------------------------------------------------------------
+-- SIDEBAR
+------------------------------------------------------------
+
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.new(0,155,1,-70)
+Sidebar.Position = UDim2.new(0,10,0,65)
+Sidebar.BackgroundColor3 = Theme.Secondary
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = Main
+
+Instance.new("UICorner",Sidebar).CornerRadius = UDim.new(0,11)
+
+local SideList = Instance.new("UIListLayout")
+SideList.Padding = UDim.new(0,5)
+SideList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+SideList.SortOrder = Enum.SortOrder.LayoutOrder
+SideList.Parent = Sidebar
+
+local SidePadding = Instance.new("UIPadding")
+SidePadding.PaddingTop = UDim.new(0,10)
+SidePadding.PaddingLeft = UDim.new(0,7)
+SidePadding.PaddingRight = UDim.new(0,7)
+SidePadding.Parent = Sidebar
+
+------------------------------------------------------------
+-- CONTENT
+------------------------------------------------------------
+
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1,-180,1,-70)
+Content.Position = UDim2.new(0,170,0,65)
+Content.BackgroundTransparency = 1
+Content.Parent = Main
+
+------------------------------------------------------------
+-- UTILITY
+------------------------------------------------------------
+
+local function CreateButton(parent,text,callback)
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(1,-20,0,38)
+    Button.BackgroundColor3 = Color3.fromRGB(35,35,43)
+    Button.BorderSizePixel = 0
+    Button.Text = text
+    Button.TextColor3 = Color3.fromRGB(235,235,240)
+    Button.Font = Enum.Font.GothamMedium
+    Button.TextSize = 13
+    Button.AutoButtonColor = false
+    Button.Parent = parent
+
+    Instance.new("UICorner",Button).CornerRadius = UDim.new(0,8)
+
+    Button.MouseEnter:Connect(function()
+        TweenService:Create(
+            Button,
+            TweenInfo.new(0.15),
+            {BackgroundColor3 = Theme.Accent}
+        ):Play()
+    end)
+
+    Button.MouseLeave:Connect(function()
+        TweenService:Create(
+            Button,
+            TweenInfo.new(0.15),
+            {BackgroundColor3 = Color3.fromRGB(35,35,43)}
+        ):Play()
+    end)
+
+    Button.MouseButton1Click:Connect(callback)
+
+    return Button
+end
+
+local function CreateToggle(parent,text,default,callback)
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(1,-20,0,40)
+    Button.BackgroundColor3 = Color3.fromRGB(30,30,37)
+    Button.BorderSizePixel = 0
+    Button.Text = ""
+    Button.Parent = parent
+
+    Instance.new("UICorner",Button).CornerRadius = UDim.new(0,8)
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1,-70,1,0)
+    Label.Position = UDim2.new(0,12,0,0)
+    Label.BackgroundTransparency = 1
+    Label.Text = text
+    Label.TextColor3 = Color3.fromRGB(230,230,235)
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Button
+
+    local State = Instance.new("TextLabel")
+    State.Size = UDim2.new(0,45,0,25)
+    State.Position = UDim2.new(1,-55,0.5,-12)
+    State.BackgroundColor3 = default and Theme.Accent or Color3.fromRGB(55,55,63)
+    State.Text = default and "ON" or "OFF"
+    State.TextColor3 = Color3.new(1,1,1)
+    State.Font = Enum.Font.GothamBold
+    State.TextSize = 10
+    State.Parent = Button
+
+    Instance.new("UICorner",State).CornerRadius = UDim.new(0,7)
+
+    local value = default
+
+    Button.MouseButton1Click:Connect(function()
+        value = not value
+
+        State.Text = value and "ON" or "OFF"
+
+        TweenService:Create(
+            State,
+            TweenInfo.new(0.15),
+            {
+                BackgroundColor3 =
+                    value and Theme.Accent or Color3.fromRGB(55,55,63)
+            }
+        ):Play()
+
+        callback(value)
+    end)
+
+    return Button
+end
+
+local function CreateTitle(parent,text)
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1,-20,0,35)
+    Label.BackgroundTransparency = 1
+    Label.Text = text
+    Label.TextColor3 = Color3.new(1,1,1)
+    Label.Font = Enum.Font.GothamBold
+    Label.TextSize = 18
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = parent
+
+    return Label
+end
+
+local function CreateSlider(parent,text,min,max,default,callback)
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(1,-20,0,65)
+    Frame.BackgroundTransparency = 1
+    Frame.Parent = parent
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1,0,0,25)
+    Label.BackgroundTransparency = 1
+    Label.Text = text.." : "..tostring(default)
+    Label.TextColor3 = Color3.fromRGB(225,225,230)
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = Frame
+
+    local Back = Instance.new("Frame")
+    Back.Size = UDim2.new(1,0,0,7)
+    Back.Position = UDim2.new(0,0,0,35)
+    Back.BackgroundColor3 = Color3.fromRGB(45,45,52)
+    Back.BorderSizePixel = 0
+    Back.Parent = Frame
+
+    Instance.new("UICorner",Back).CornerRadius = UDim.new(1,0)
+
+    local Fill = Instance.new("Frame")
+    Fill.Size = UDim2.new((default-min)/(max-min),0,1,0)
+    Fill.BackgroundColor3 = Theme.Accent
+    Fill.BorderSizePixel = 0
+    Fill.Parent = Back
+
+    Instance.new("UICorner",Fill).CornerRadius = UDim.new(1,0)
+
+    local Dragging = false
+
+    local function Update(x)
+        local percent = math.clamp(
+            (x-Back.AbsolutePosition.X)/Back.AbsoluteSize.X,
+            0,1
+        )
+
+        local value = min + (max-min)*percent
+
+        value = math.floor(value*10)/10
+
+        Fill.Size = UDim2.new(percent,0,1,0)
+        Label.Text = text.." : "..tostring(value)
+
+        callback(value)
+    end
+
+    Back.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            Dragging = true
+            Update(input.Position.X)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if Dragging then
+            if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
+                Update(input.Position.X)
+            end
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            Dragging = false
+        end
+    end)
+
+    return Frame
+end
+
+------------------------------------------------------------
+-- PAGES
+------------------------------------------------------------
+
+local Pages = {}
+local TabButtons = {}
+
+local TabNames = {
+    "👤 Player",
+    "👁 ESP",
+    "🌌 Visual",
+    "📍 Teleport",
+    "💨 Fling",
+    "💰 AutoFarm",
+    "🎭 Troll",
+    "⚔ Combat",
+    "⚙ Settings",
+    "ℹ Bio"
+}
+
+local function CreatePage(name)
+    local Page = Instance.new("ScrollingFrame")
+    Page.Name = name
+    Page.Size = UDim2.fromScale(1,1)
+    Page.BackgroundTransparency = 1
+    Page.BorderSizePixel = 0
+    Page.ScrollBarThickness = 3
+    Page.ScrollBarImageColor3 = Theme.Accent
+    Page.Visible = false
+    Page.Parent = Content
+
+    local List = Instance.new("UIListLayout")
+    List.Padding = UDim.new(0,7)
+    List.SortOrder = Enum.SortOrder.LayoutOrder
+    List.Parent = Page
+
+    local Padding = Instance.new("UIPadding")
+    Padding.PaddingLeft = UDim.new(0,10)
+    Padding.PaddingRight = UDim.new(0,10)
+    Padding.PaddingBottom = UDim.new(0,10)
+    Padding.Parent = Page
+
+    Pages[name] = Page
+
+    return Page
+end
+
+local function SelectPage(name)
+    for pageName,page in pairs(Pages) do
+        page.Visible = pageName == name
+    end
+
+    for tabName,button in pairs(TabButtons) do
+        if tabName == name then
+            button.BackgroundColor3 = Theme.Accent
+        else
+            button.BackgroundColor3 = Color3.fromRGB(30,30,37)
+        end
+    end
+end
+
+for _,name in ipairs(TabNames) do
+
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(1,0,0,37)
+    Button.BackgroundColor3 = Color3.fromRGB(30,30,37)
+    Button.BorderSizePixel = 0
+    Button.Text = name
+    Button.TextColor3 = Color3.fromRGB(225,225,230)
+    Button.Font = Enum.Font.GothamMedium
+    Button.TextSize = 12
+    Button.Parent = Sidebar
+
+    Instance.new("UICorner",Button).CornerRadius = UDim.new(0,8)
+
+    TabButtons[name] = Button
+
+    local Page = CreatePage(name)
+
+    Button.MouseButton1Click:Connect(function()
+        SelectPage(name)
+    end)
+end
+
+------------------------------------------------------------
+-- PLAYER PAGE
+------------------------------------------------------------
+
+local PlayerPage = Pages["👤 Player"]
+
+CreateTitle(PlayerPage,"Player")
+
+CreateSlider(
+    PlayerPage,
+    "Скорость",
+    0,
+    100,
+    Config.Speed,
+    function(value)
+        Config.Speed = value
+
+        if Humanoid then
+            Humanoid.WalkSpeed = value
+        end
+    end
+)
+
+CreateSlider(
+    PlayerPage,
+    "Сила прыжка",
+    0,
+    200,
+    Config.JumpPower,
+    function(value)
+        Config.JumpPower = value
+
+        if Humanoid then
+            Humanoid.UseJumpPower = true
+            Humanoid.JumpPower = value
+        end
+    end
+)
+
+CreateSlider(
+    PlayerPage,
+    "Размер персонажа",
+    0.1,
+    5,
+    1,
+    function(value)
+
+        Config.CharacterScale = value
+
+        if Character then
+
+            local Scale = Character:FindFirstChild("BodyDepthScale")
+
+            if Scale then
+                Scale.Value = value
+            end
+
+            local Height = Character:FindFirstChild("BodyHeightScale")
+
+            if Height then
+                Height.Value = value
+            end
+
+            local Width = Character:FindFirstChild("BodyWidthScale")
+
+            if Width then
+                Width.Value = value
+            end
+
+        end
+    end
+)
+
+CreateToggle(
+    PlayerPage,
+    "Невидимость (локально)",
+    false,
+    function(value)
+
+        Config.Invisible = value
+
+        if Character then
+            for _,obj in ipairs(Character:GetDescendants()) do
+                if obj:IsA("BasePart") then
+                    obj.LocalTransparencyModifier = value and 1 or 0
+                end
+            end
+        end
+    end
+)
+
+CreateToggle(
+    PlayerPage,
+    "Полет",
+    false,
+    function(value)
+        Config.Fly = value
+    end
+)
+
+CreateSlider(
+    PlayerPage,
+    "Скорость полета",
+    10,
+    200,
+    60,
+    function(value)
+        Config.FlySpeed = value
+    end
+)
+
+CreateToggle(
+    PlayerPage,
+    "Анимация полета",
+    false,
+    function(value)
+        Config.FlyAnimation = value
+    end
+)
+
+CreateToggle(
+    PlayerPage,
+    "Бесконечный прыжок",
+    false,
+    function(value)
+        Config.InfiniteJump = value
+    end
+)
+
+CreateToggle(
+    PlayerPage,
+    "Noclip",
+    false,
+    function(value)
+        Config.Noclip = value
+    end
+)
+
+CreateButton(
+    PlayerPage,
+    "↩ Сбросить Player",
+    function()
+
+        Config.Speed = 16
+        Config.JumpPower = 50
+        Config.FlySpeed = 60
+        Config.Invisible = false
+        Config.Fly = false
+        Config.InfiniteJump = false
+        Config.Noclip = false
+
+        if Humanoid then
+            Humanoid.WalkSpeed = 16
+            Humanoid.JumpPower = 50
+        end
+
+        if Character then
+            for _,obj in ipairs(Character:GetDescendants()) do
+                if obj:IsA("BasePart") then
+                    obj.LocalTransparencyModifier = 0
+                end
+            end
+        end
+    end
+)
+
+------------------------------------------------------------
+-- FLY SYSTEM
+------------------------------------------------------------
+
+local FlyVelocity
+local FlyGyro
+
+RunService.RenderStepped:Connect(function()
+
+    if not Character or not RootPart then
+        return
+    end
+
+    if Config.Fly then
+
+        if not FlyVelocity then
+
+            FlyVelocity = Instance.new("BodyVelocity")
+            FlyVelocity.MaxForce = Vector3.new(1e6,1e6,1e6)
+            FlyVelocity.Velocity = Vector3.zero
+            FlyVelocity.Parent = RootPart
+
+            FlyGyro = Instance.new("BodyGyro")
+            FlyGyro.MaxTorque = Vector3.new(1e6,1e6,1e6)
+            FlyGyro.P = 10000
+            FlyGyro.Parent = RootPart
+
+        end
+
+        Humanoid.PlatformStand = true
+
+        local direction = Vector3.zero
+
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+            direction += Camera.CFrame.LookVector
+        end
+
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+            direction -= Camera.CFrame.LookVector
+        end
+
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+            direction -= Camera.CFrame.RightVector
+        end
+
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+            direction += Camera.CFrame.RightVector
+        end
+
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+            direction += Vector3.yAxis
+        end
+
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+            direction -= Vector3.yAxis
+        end
+
+        if direction.Magnitude > 0 then
+            direction = direction.Unit
+        end
+
+        FlyVelocity.Velocity = direction * Config.FlySpeed
+        FlyGyro.CFrame = Camera.CFrame
+
+    else
+
+        if FlyVelocity then
+            FlyVelocity:Destroy()
+            FlyVelocity = nil
+        end
+
+        if FlyGyro then
+            FlyGyro:Destroy()
+            FlyGyro = nil
+        end
+
+        Humanoid.PlatformStand = false
+    end
+end)
+
+------------------------------------------------------------
+-- NOCLIP
+------------------------------------------------------------
+
+RunService.Stepped:Connect(function()
+
+    if not Config.Noclip then
+        return
+    end
+
+    if Character then
+        for _,part in ipairs(Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+------------------------------------------------------------
+-- INFINITE JUMP
+------------------------------------------------------------
+
+UserInputService.JumpRequest:Connect(function()
+
+    if Config.InfiniteJump and Humanoid then
+        Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+
+end)
+
+------------------------------------------------------------
+-- ESP PAGE
+------------------------------------------------------------
+
+local ESPPage = Pages["👁 ESP"]
+
+CreateTitle(ESPPage,"ESP / Подсветка")
+
+local ESPObjects = {}
+
+local function ClearESP()
+
+    for player,highlight in pairs(ESPObjects) do
+
+        if highlight then
+            highlight:Destroy()
+        end
+
+        ESPObjects[player] = nil
+    end
+end
+
+local function GetRoleColor(player)
+
+    local role = player:GetAttribute("Role")
+
+    if role == "Murderer" or role == "Murder" then
+        return Color3.fromRGB(255,50,50)
+    elseif role == "Sheriff" then
+        return Color3.fromRGB(50,120,255)
+    else
+        return Color3.fromRGB(50,255,100)
+    end
+end
+
+local function UpdateESP()
+
+    ClearESP()
+
+    if not Config.ESP then
+        return
+    end
+
+    for _,player in ipairs(Players:GetPlayers()) do
+
+        if player ~= LocalPlayer and player.Character then
+
+            local Highlight = Instance.new("Highlight")
+            Highlight.Name = "SkyHubESP"
+            Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            Highlight.FillColor = GetRoleColor(player)
+            Highlight.FillTransparency = 0.55
+            Highlight.OutlineColor = GetRoleColor(player)
+            Highlight.Parent = player.Character
+
+            ESPObjects[player] = Highlight
+        end
+    end
+end
+
+CreateToggle(
+    ESPPage,
+    "Подсветка игроков",
+    false,
+    function(value)
+
+        Config.ESP = value
+        UpdateESP()
+
+    end
+)
+
+CreateToggle(
+    ESPPage,
+    "Подсветка оружия",
+    false,
+    function(value)
+
+        Config.WeaponESP = value
+
+    end
+)
+
+CreateButton(
+    ESPPage,
+    "🔄 Обновить ESP",
+    function()
+        UpdateESP()
+    end
+)
+
+------------------------------------------------------------
+-- VISUAL PAGE
+------------------------------------------------------------
+
+local VisualPage = Pages["🌌 Visual"]
+
+CreateTitle(VisualPage,"Visual")
+
+CreateSlider(
+    VisualPage,
+    "Время суток",
+    0,
+    24,
+    Lighting.ClockTime,
+    function(value)
+        Lighting.ClockTime = value
+    end
+)
+
+CreateButton(
+    VisualPage,
+    "☀ Ясно",
+    function()
+
+        Config.Weather = "Clear"
+
+        Lighting.FogEnd = 100000
+        Lighting.Brightness = 2
+
+    end
+)
+
+CreateButton(
+    VisualPage,
+    "🌧 Дождь",
+    function()
+
+        Config.Weather = "Rain"
+
+        Lighting.FogEnd = 500
+        Lighting.Brightness = 1.5
+
+    end
+)
+
+CreateButton(
+    VisualPage,
+    "🌫 Туман",
+    function()
+
+        Config.Weather = "Fog"
+
+        Lighting.FogEnd = 80
+        Lighting.Brightness = 1
+
+    end
+)
+
+CreateButton(
+    VisualPage,
+    "🌅 Закат",
+    function()
+
+        Config.Sky = "Sunset"
+        Lighting.ClockTime = 18
+
+    end
+)
+
+CreateButton(
+    VisualPage,
+    "🌙 Ночь",
+    function()
+
+        Config.Sky = "Night"
+        Lighting.ClockTime = 0
+
+    end
+)
+
+CreateButton(
+    VisualPage,
+    "🌌 Космос",
+    function()
+
+        Config.Sky = "Space"
+        Lighting.ClockTime = 0
+        Lighting.Brightness = 0.5
+
+    end
+)
+
+CreateToggle(
+    VisualPage,
+    "Glow",
+    false,
+    function(value)
+
+        Config.Glow = value
+
+        if Character then
+
+            local existing = Character:FindFirstChild("SkyHubGlow")
+
+            if existing then
+                existing:Destroy()
+            end
+
+            if value then
+
+                local Highlight = Instance.new("Highlight")
+                Highlight.Name = "SkyHubGlow"
+                Highlight.FillColor = Color3.fromRGB(0,200,255)
+                Highlight.OutlineColor = Color3.fromRGB(0,220,255)
+                Highlight.FillTransparency = 0.65
+                Highlight.Parent = Character
+
+            end
+        end
+    end
+)
+
+------------------------------------------------------------
+-- TELEPORT PAGE
+------------------------------------------------------------
+
+local TeleportPage = Pages["📍 Teleport"]
+
+CreateTitle(TeleportPage,"Teleport")
+
+local function TeleportToPlayer(player)
+
+    if player
+    and player.Character
+    and player.Character:FindFirstChild("HumanoidRootPart")
+    and RootPart then
+
+        RootPart.CFrame =
+            player.Character.HumanoidRootPart.CFrame
+            * CFrame.new(0,0,4)
+
+    end
+end
+
+CreateButton(
+    TeleportPage,
+    "📍 Tp к выбранному игроку",
+    function()
+
+        if Config.SelectedPlayer then
+            TeleportToPlayer(Config.SelectedPlayer)
+        end
+
+    end
+)
+
+CreateButton(
+    TeleportPage,
+    "🏠 Сохранить текущую позицию как Lobby",
+    function()
+
+        if RootPart then
+            Config.SavedLobbyPosition = RootPart.CFrame
+        end
+
+    end
+)
+
+CreateButton(
+    TeleportPage,
+    "🏠 Tp в Lobby",
+    function()
+
+        if Config.SavedLobbyPosition and RootPart then
+            RootPart.CFrame = Config.SavedLobbyPosition
+        end
+
+    end
+)
+
+CreateButton(
+    TeleportPage,
+    "🗺 Сохранить позицию как Map",
+    function()
+
+        if RootPart then
+            Config.SavedMapPosition = RootPart.CFrame
+        end
+
+    end
+)
+
+CreateButton(
+    TeleportPage,
+    "🗺 Tp на Map",
+    function()
+
+        if Config.SavedMapPosition and RootPart then
+            RootPart.CFrame = Config.SavedMapPosition
+            return
+        end
+
+        local Map = workspace:FindFirstChild("Map")
+
+        if Map and Map:IsA("Model") then
+
+            local cf = Map:GetPivot()
+
+            RootPart.CFrame = cf + Vector3.new(0,5,0)
+
+        else
+
+            local Baseplate = workspace:FindFirstChild("Baseplate")
+
+            if Baseplate then
+
+                RootPart.CFrame =
+                    Baseplate.CFrame
+                    + Vector3.new(0,10,0)
+
+            end
+        end
+    end
+)
+
+------------------------------------------------------------
+-- PLAYER SELECTOR
+------------------------------------------------------------
+
+CreateTitle(TeleportPage,"Выбор игрока")
+
+local PlayerList = Instance.new("Frame")
+PlayerList.Size = UDim2.new(1,-20,0,180)
+PlayerList.BackgroundColor3 = Color3.fromRGB(25,25,32)
+PlayerList.BorderSizePixel = 0
+PlayerList.Parent = TeleportPage
+
+Instance.new("UICorner",PlayerList).CornerRadius = UDim.new(0,8)
+
+local PlayerLayout = Instance.new("UIListLayout")
+PlayerLayout.Padding = UDim.new(0,4)
+PlayerLayout.Parent = PlayerList
+
+local function RefreshPlayers()
+
+    for _,obj in ipairs(PlayerList:GetChildren()) do
+        if obj:IsA("TextButton") then
+            obj:Destroy()
+        end
+    end
+
+    for _,player in ipairs(Players:GetPlayers()) do
+
+        if player ~= LocalPlayer then
+
+            local Button = Instance.new("TextButton")
+            Button.Size = UDim2.new(1,-8,0,30)
+            Button.BackgroundColor3 = Color3.fromRGB(35,35,43)
+            Button.Text = player.DisplayName.."  @"..player.Name
+            Button.TextColor3 = Color3.new(1,1,1)
+            Button.Font = Enum.Font.Gotham
+            Button.TextSize = 11
+            Button.Parent = PlayerList
+
+            Instance.new("UICorner",Button).CornerRadius = UDim.new(0,6)
+
+            Button.MouseButton1Click:Connect(function()
+
+                Config.SelectedPlayer = player
+
+                for _,b in ipairs(PlayerList:GetChildren()) do
+                    if b:IsA("TextButton") then
+                        b.BackgroundColor3 = Color3.fromRGB(35,35,43)
+                    end
+                end
+
+                Button.BackgroundColor3 = Theme.Accent
+            end)
+        end
+    end
+end
+
+RefreshPlayers()
+
+Players.PlayerAdded:Connect(RefreshPlayers)
+Players.PlayerRemoving:Connect(RefreshPlayers)
+
+------------------------------------------------------------
+-- FLING PAGE
+------------------------------------------------------------
+
+local FlingPage = Pages["💨 Fling"]
+
+CreateTitle(FlingPage,"Fling / Physics Test")
+
+local function FlingPlayer(player)
+
+    if not player
+    or not player.Character
+    or not player.Character:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+
+    local TargetRoot =
+        player.Character.HumanoidRootPart
+
+    local Force = Instance.new("BodyVelocity")
+
+    Force.MaxForce =
+        Vector3.new(1e5,1e5,1e5)
+
+    Force.Velocity =
+        Vector3.new(0,150,0)
+
+    Force.Parent = TargetRoot
+
+    task.delay(0.4,function()
+
+        if Force then
+            Force:Destroy()
+        end
+
+    end)
+end
+
+CreateButton(
+    FlingPage,
+    "💨 Fling выбранного",
+    function()
+
+        if Config.SelectedPlayer then
+            FlingPlayer(Config.SelectedPlayer)
+        end
+
+    end
+)
+
+CreateButton(
+    FlingPage,
+    "💨 Fling всех NPC",
+    function()
+
+        for _,obj in ipairs(workspace:GetDescendants()) do
+
+            if obj:IsA("Model")
+            and obj ~= Character
+            and obj:FindFirstChildOfClass("Humanoid")
+            and obj:FindFirstChild("HumanoidRootPart") then
+
+                local Player =
+                    Players:GetPlayerFromCharacter(obj)
+
+                if not Player then
+                    local Force = Instance.new("BodyVelocity")
+                    Force.MaxForce = Vector3.new(1e5,1e5,1e5)
+                    Force.Velocity = Vector3.new(0,150,0)
+                    Force.Parent = obj.HumanoidRootPart
+
+                    task.delay(0.4,function()
+                        if Force then
+                            Force:Destroy()
+                        end
+                    end)
+                end
+            end
+        end
+    end
+)
+
+------------------------------------------------------------
+-- AUTOFARM PAGE
+------------------------------------------------------------
+
+local AutoFarmPage = Pages["💰 AutoFarm"]
+
+CreateTitle(AutoFarmPage,"AutoFarm")
+
+local CoinsCollected = 0
+
+local Counter = Instance.new("TextLabel")
+Counter.Size = UDim2.new(1,-20,0,45)
+Counter.BackgroundColor3 = Color3.fromRGB(28,28,35)
+Counter.Text = "💰 Монет собрано: 0"
+Counter.TextColor3 = Color3.new(1,1,1)
+Counter.Font = Enum.Font.GothamBold
+Counter.TextSize = 15
+Counter.Parent = AutoFarmPage
+
+Instance.new("UICorner",Counter).CornerRadius = UDim.new(0,8)
+
+CreateToggle(
+    AutoFarmPage,
+    "AutoFarm Coins",
+    false,
+    function(value)
+        Config.AutoFarm = value
+    end
+)
+
+CreateToggle(
+    AutoFarmPage,
+    "Auto Win — тренировочный режим",
+    false,
+    function(value)
+
+        Config.AutoWin = value
+
+        if value then
+            Config.Invisible = true
+            Config.Noclip = true
+        else
+            Config.Invisible = false
+            Config.Noclip = false
+        end
+
+    end
+)
+
+local function FindNearestCoin()
+
+    if not RootPart then
+        return nil
+    end
+
+    local nearest = nil
+    local distance = math.huge
+
+    for _,obj in ipairs(workspace:GetDescendants()) do
+
+        if obj:IsA("BasePart") then
+
+            local name = string.lower(obj.Name)
+
+            if string.find(name,"coin")
+            or string.find(name,"cash")
+            or string.find(name,"money") then
+
+                local d =
+                    (RootPart.Position - obj.Position).Magnitude
+
+                if d < distance then
+                    distance = d
+                    nearest = obj
+                end
+            end
+        end
+    end
+
+    return nearest
+end
+
+task.spawn(function()
+
+    while true do
+
+        task.wait(2)
+
+        if Config.AutoFarm and RootPart then
+
+            local coin = FindNearestCoin()
+
+            if coin then
+
+                RootPart.CFrame =
+                    coin.CFrame
+                    + Vector3.new(0,3,0)
+
+                CoinsCollected += 1
+
+                Counter.Text =
+                    "💰 Монет собрано: "..CoinsCollected
+            end
+        end
+    end
+
+end)
+
+------------------------------------------------------------
+-- TROLL PAGE
+------------------------------------------------------------
+
+local TrollPage = Pages["🎭 Troll"]
+
+CreateTitle(TrollPage,"Troll / Emotes")
+
+local function PlayEmote(id)
+
+    if Humanoid then
+
+        local Animation =
+            Instance.new("Animation")
+
+        Animation.AnimationId = id
+
+        local Track =
+            Humanoid:LoadAnimation(Animation)
+
+        Track:Play()
+
+    end
+end
+
+CreateButton(
+    TrollPage,
+    "👋 Wave",
+    function()
+        PlayEmote("rbxassetid://507770239")
+    end
+)
+
+CreateButton(
+    TrollPage,
+    "👉 Point",
+    function()
+        PlayEmote("rbxassetid://507770453")
+    end
+)
+
+CreateButton(
+    TrollPage,
+    "🎉 Cheer",
+    function()
+        PlayEmote("rbxassetid://507770677")
+    end
+)
+
+CreateButton(
+    TrollPage,
+    "💃 Dance",
+    function()
+        PlayEmote("rbxassetid://507771019")
+    end
+)
+
+CreateButton(
+    TrollPage,
+    "🧟 Zombie",
+    function()
+        PlayEmote("rbxassetid://616006778")
+    end
+)
+
+CreateButton(
+    TrollPage,
+    "🤖 Robot",
+    function()
+        PlayEmote("rbxassetid://616088211")
+    end
+)
+
+CreateButton(
+    TrollPage,
+    "🧘 Sit",
+    function()
+        PlayEmote("rbxassetid://2506281703")
+    end
+)
+
+CreateToggle(
+    TrollPage,
+    "Headless — локальный эффект",
+    false,
+    function(value)
+
+        if not Character then return end
+
+        local Head = Character:FindFirstChild("Head")
+
+        if Head then
+            Head.LocalTransparencyModifier =
+                value and 1 or 0
+        end
+    end
+)
+
+CreateToggle(
+    TrollPage,
+    "Korblox — локальный эффект",
+    false,
+    function(value)
+
+        if not Character then return end
+
+        local LeftLeg =
+            Character:FindFirstChild("LeftLowerLeg")
+            or Character:FindFirstChild("Left Leg")
+
+        if LeftLeg and LeftLeg:IsA("BasePart") then
+            LeftLeg.LocalTransparencyModifier =
+                value and 1 or 0
+        end
+    end
+)
+
+CreateToggle(
+    TrollPage,
+    "JERK / тряска руки",
+    false,
+    function(value)
+
+        if not value then return end
+
+        task.spawn(function()
+
+            for i = 1,20 do
+
+                if not Character then break end
+
+                local Arm =
+                    Character:FindFirstChild("RightUpperArm")
+                    or Character:FindFirstChild("Right Arm")
+
+                if Arm then
+
+                    Arm.CFrame =
+                        Arm.CFrame
+                        * CFrame.Angles(
+                            0,
+                            0,
+                            math.sin(i)*0.4
+                        )
+                end
+
+                task.wait(0.05)
+            end
+
+        end)
+    end
+)
+
+------------------------------------------------------------
+-- COMBAT PAGE
+------------------------------------------------------------
+
+local CombatPage = Pages["⚔ Combat"]
+
+CreateTitle(CombatPage,"Combat Training")
+
+local CombatInfo = Instance.new("TextLabel")
+CombatInfo.Size = UDim2.new(1,-20,0,60)
+CombatInfo.BackgroundColor3 = Color3.fromRGB(30,30,38)
+CombatInfo.Text =
+    "⚔ Combat раздел предназначен для тестирования\n" ..
+    "боевой системы в собственной игре."
+CombatInfo.TextColor3 = Color3.fromRGB(180,180,190)
+CombatInfo.Font = Enum.Font.Gotham
+CombatInfo.TextSize = 12
+CombatInfo.TextWrapped = true
+CombatInfo.Parent = CombatPage
+
+Instance.new("UICorner",CombatInfo).CornerRadius = UDim.new(0,8)
+
+CreateSlider(
+    CombatPage,
+    "Aimbot FOV",
+    10,
+    500,
+    120,
+    function(value)
+
+        Config.AimbotFOV = value
+
+    end
+)
+
+CreateSlider(
+    CombatPage,
+    "Smoothness",
+    1,
+    100,
+    50,
+    function(value)
+
+        Config.Smoothness = value
+
+    end
+)
+
+CreateToggle(
+    CombatPage,
+    "Training Aim Assist",
+    false,
+    function(value)
+
+        Config.AimAssist = value
+
+    end
+)
+
+CreateToggle(
+    CombatPage,
+    "Target Highlight",
+    false,
+    function(value)
+
+        if value then
+            Config.ESP = true
+            UpdateESP()
+        end
+
+    end
+)
+
+CreateButton(
+    CombatPage,
+    "🎯 Найти ближайшего NPC",
+    function()
+
+        if not RootPart then return end
+
+        local nearest
+        local distance = math.huge
+
+        for _,obj in ipairs(workspace:GetDescendants()) do
+
+            if obj:IsA("Model")
+            and obj ~= Character
+            and obj:FindFirstChildOfClass("Humanoid")
+            and obj:FindFirstChild("HumanoidRootPart") then
+
+                local player =
+                    Players:GetPlayerFromCharacter(obj)
+
+                if not player then
+
+                    local d =
+                        (RootPart.Position -
+                        obj.HumanoidRootPart.Position).Magnitude
+
+                    if d < distance then
+                        distance = d
+                        nearest = obj
+                    end
+                end
+            end
+        end
+
+        if nearest then
+
+            local Highlight =
+                Instance.new("Highlight")
+
+            Highlight.FillColor =
+                Color3.fromRGB(255,80,80)
+
+            Highlight.Parent = nearest
+
+            task.delay(3,function()
+
+                if Highlight then
+                    Highlight:Destroy()
+                end
+
+            end)
+        end
+
+    end
+)
+
+------------------------------------------------------------
+-- SETTINGS PAGE
+------------------------------------------------------------
+
+local SettingsPage = Pages["⚙ Settings"]
+
+CreateTitle(SettingsPage,"Settings")
+
+local function ApplyTheme(name)
+
+    if not Themes[name] then
+        return
+    end
+
+    Config.Theme = name
+    Theme = Themes[name]
+
+    Main.BackgroundColor3 = Theme.Main
+    Top.BackgroundColor3 = Theme.Secondary
+    TopFix.BackgroundColor3 = Theme.Secondary
+    Sidebar.BackgroundColor3 = Theme.Secondary
+
+    SLogo.BackgroundColor3 = Theme.Accent
+    Stroke.Color = Theme.Accent
+end
+
+CreateButton(
+    SettingsPage,
+    "⚫ Тёмная тема",
+    function()
+        ApplyTheme("Dark")
+    end
+)
+
+CreateButton(
+    SettingsPage,
+    "🔵 Синяя тема",
+    function()
+        ApplyTheme("Blue")
+    end
+)
+
+CreateButton(
+    SettingsPage,
+    "🟣 Фиолетовая тема",
+    function()
+        ApplyTheme("Purple")
+    end
+)
+
+CreateButton(
+    SettingsPage,
+    "🟢 Зелёная тема",
+    function()
+        ApplyTheme("Green")
+    end
+)
+
+CreateButton(
+    SettingsPage,
+    "🔴 Красная тема",
+    function()
+        ApplyTheme("Red")
+    end
+)
+
+CreateButton(
+    SettingsPage,
+    "⚪ Серая тема",
+    function()
+        ApplyTheme("Gray")
+    end
+)
+
+CreateButton(
+    SettingsPage,
+    "🇷🇺 Русский",
+    function()
+        Config.Language = "RU"
+    end
+)
+
+CreateButton(
+    SettingsPage,
+    "🇬🇧 English",
+    function()
+        Config.Language = "EN"
+    end
+)
+
+CreateSlider(
+    SettingsPage,
+    "Размер меню",
+    0.6,
+    1.5,
+    1,
+    function(value)
+
+        Config.MenuScale = value
+
+        Main.Size =
+            UDim2.new(
+                0,
+                700*value,
+                0,
+                500*value
+            )
+    end
+)
+
+CreateButton(
+    SettingsPage,
+    "🔄 Сбросить настройки",
+    function()
+
+        Config.Theme = "Purple"
+        Config.Language = "RU"
+        Config.MenuScale = 1
+
+        ApplyTheme("Purple")
+
+        Main.Size =
+            UDim2.new(0,700,0,500)
+
+    end
+)
+
+------------------------------------------------------------
+-- BIO PAGE
+------------------------------------------------------------
+
+local BioPage = Pages["ℹ Bio"]
+
+CreateTitle(BioPage,"SkyHub")
+
+local function BioLabel(text)
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1,-20,0,45)
+    Label.BackgroundColor3 = Color3.fromRGB(28,28,35)
+    Label.Text = text
+    Label.TextColor3 = Color3.fromRGB(230,230,235)
+    Label.Font = Enum.Font.GothamMedium
+    Label.TextSize = 13
+    Label.Parent = BioPage
+
+    Instance.new("UICorner",Label).CornerRadius = UDim.new(0,8)
+
+    return Label
+end
+
+BioLabel("🚀 SkyHub")
+BioLabel("Universal Roblox Client Hub")
+BioLabel("📱 Telegram: @kazobl")
+BioLabel("📢 Telegram Channel: @SkyHub_Deltax")
+BioLabel("💬 Discord: скоро будет добавлен")
+BioLabel("⚙ Version: 1.0.0")
+BioLabel("✨ Спасибо за использование SkyHub!")
+
+------------------------------------------------------------
+-- MINIMIZE
+------------------------------------------------------------
+
+local Mini = Instance.new("TextButton")
+Mini.Size = UDim2.new(0,55,0,55)
+Mini.Position = UDim2.fromScale(0.05,0.5)
+Mini.AnchorPoint = Vector2.new(0,0.5)
+Mini.BackgroundColor3 = Theme.Accent
+Mini.Text = "S"
+Mini.TextColor3 = Color3.new(1,1,1)
+Mini.Font = Enum.Font.GothamBlack
+Mini.TextSize = 28
+Mini.Visible = false
+Mini.Parent = ScreenGui
+
+Instance.new("UICorner",Mini).CornerRadius = UDim.new(0,15)
+
+Close.MouseButton1Click:Connect(function()
+
+    Main.Visible = false
+    Mini.Visible = true
+
+end)
+
+Mini.MouseButton1Click:Connect(function()
+
+    Main.Visible = true
+    Mini.Visible = false
+
+end)
+
+------------------------------------------------------------
+-- DRAGGING
+------------------------------------------------------------
+
+local Dragging = false
+local DragStart
+local StartPosition
+
+Top.InputBegan:Connect(function(input)
+
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+
+        Dragging = true
+        DragStart = input.Position
+        StartPosition = Main.Position
+
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+
+    if Dragging then
+
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+
+            local Delta =
+                input.Position - DragStart
+
+            Main.Position =
+                UDim2.new(
+                    StartPosition.X.Scale,
+                    StartPosition.X.Offset + Delta.X,
+                    StartPosition.Y.Scale,
+                    StartPosition.Y.Offset + Delta.Y
+                )
+        end
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+
+        Dragging = false
+
+    end
+end)
+
+------------------------------------------------------------
+-- HOTKEY
+------------------------------------------------------------
+
+UserInputService.InputBegan:Connect(function(input,processed)
+
+    if processed then return end
+
+    if input.KeyCode == Enum.KeyCode.RightShift then
+
+        Main.Visible = not Main.Visible
+        Mini.Visible = not Main.Visible
+
+    end
+end)
+
+------------------------------------------------------------
+-- CHARACTER UPDATES
+------------------------------------------------------------
+
+RunService.RenderStepped:Connect(function()
+
+    if not Character then
+        return
+    end
+
+    if Config.Invisible then
+
+        for _,obj in ipairs(Character:GetDescendants()) do
+
+            if obj:IsA("BasePart") then
+                obj.LocalTransparencyModifier = 1
+            end
+
+        end
+    end
+
+    if Config.Glow then
+
+        if not Character:FindFirstChild("SkyHubGlow") then
+
+            local Highlight = Instance.new("Highlight")
+
+            Highlight.Name = "SkyHubGlow"
+            Highlight.FillColor = Color3.fromRGB(0,200,255)
+            Highlight.OutlineColor = Color3.fromRGB(0,220,255)
+            Highlight.FillTransparency = 0.65
+
+            Highlight.Parent = Character
+
+        end
+    end
+
+end)
+
+------------------------------------------------------------
+-- DEFAULT PAGE
+------------------------------------------------------------
+
+SelectPage("👤 Player")
+
+------------------------------------------------------------
+-- STARTUP NOTIFICATION
+------------------------------------------------------------
+
+task.wait(1)
+
+pcall(function()
+
+    StarterGui:SetCore(
+        "SendNotification",
+        {
+            Title = "🚀 SkyHub",
+            Text = "SkyHub успешно запущен!",
+            Duration = 4
+        }
+    )
+
+end)
+
+print("================================")
+print("🚀 SKYHUB LOADED")
+print("Version: 1.0.0")
+print("Player: "..LocalPlayer.Name)
+print("================================")
