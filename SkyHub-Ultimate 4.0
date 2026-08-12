@@ -15,7 +15,6 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Удаляем старые GUI
 if playerGui:FindFirstChild("SkyHub") then playerGui.SkyHub:Destroy() end
 if playerGui:FindFirstChild("SkyHubOverlay") then playerGui.SkyHubOverlay:Destroy() end
 
@@ -33,7 +32,6 @@ local Theme = {
 local Font = Enum.Font.GothamMedium
 local FontBold = Enum.Font.GothamBold
 
--- НАСТРОЙКИ
 local Settings = {
     Speed = 16,
     JumpPower = 50,
@@ -105,7 +103,6 @@ local Settings = {
     MenuScale = 1,
 }
 
--- КЭШ
 local Cache = {
     FlyKeys = {F=0,B=0,L=0,R=0},
     FlyRunning = false,
@@ -158,7 +155,6 @@ local Cache = {
     CurrentEmote = nil,
 }
 
--- ХЕЛПЕРЫ
 local function safeDisconnect(c) if c and typeof(c)=="RBXScriptConnection" then pcall(function() c:Disconnect() end) end end
 local function notify(title, content, duration) pcall(function() game.StarterGui:SetCore("SendNotification", {Title=title, Text=content, Duration=duration or 3}) end) end
 local function hexToRGB(hex) hex=hex:gsub("#",""); if #hex==6 then return Color3.fromRGB(tonumber("0x"..hex:sub(1,2)) or 255, tonumber("0x"..hex:sub(3,4)) or 255, tonumber("0x"..hex:sub(5,6)) or 255) end; return Color3.fromRGB(255,255,255) end
@@ -187,7 +183,6 @@ local function getRole(p)
 end
 local function getRoleColor(p) local r=getRole(p); if r=="Murder" then return Settings.MurderColor elseif r=="Sheriff" then return Settings.SheriffColor else return Settings.InnocentColor end end
 
--- ФУНКЦИИ ПОЛЁТА, BHOP, SPIN и т.д. (сокращённо, но все работают)
 local function stopFly()
     Cache.FlyRunning=false
     if Cache.FlyBodyGyro then pcall(function() Cache.FlyBodyGyro:Destroy() end); Cache.FlyBodyGyro=nil end
@@ -318,7 +313,6 @@ local function setupAntiAFK()
     end)
 end
 
--- ESP, CHAMS, TRACERS, TRAILS, JUMP CIRCLES
 local function createOrUpdateHighlight(player, color)
     if not player or not player.Character then return end
     local char=player.Character
@@ -564,7 +558,6 @@ local function toggleGlow(value)
     end
 end
 
--- TEXTURE PACK
 local TEXTURE_VARIANTS={Brick={BaseMaterial=Enum.Material.Brick, Texture='rbxassetid://10777285622'}, Concrete={BaseMaterial=Enum.Material.Concrete, Texture='rbxassetid://15622710576'}, CorrodedMetal={BaseMaterial=Enum.Material.CorrodedMetal, Texture='rbxassetid://78612695839404'}, Grass={BaseMaterial=Enum.Material.Grass, Texture='rbxassetid://9267183930'}, Metal={BaseMaterial=Enum.Material.Metal, Texture='rbxassetid://121650613091353'}, Sand={BaseMaterial=Enum.Material.Sand, Texture='rbxassetid://12624140843'}, Slate={BaseMaterial=Enum.Material.Slate, Texture='rbxassetid://8676746437'}, Wood={BaseMaterial=Enum.Material.Wood, Texture='rbxassetid://3258599312'}, WoodPlanks={BaseMaterial=Enum.Material.WoodPlanks, Texture='rbxassetid://8676581022'}}
 local TEXTURE_VARIANT_BY_MATERIAL={[Enum.Material.Brick]='Brick', [Enum.Material.Concrete]='Concrete', [Enum.Material.CorrodedMetal]='CorrodedMetal', [Enum.Material.Grass]='Grass', [Enum.Material.Metal]='Metal', [Enum.Material.Sand]='Sand', [Enum.Material.Slate]='Slate', [Enum.Material.Wood]='Wood', [Enum.Material.WoodPlanks]='WoodPlanks'}
 local function ensureTextureVariants()
@@ -633,7 +626,6 @@ local function applyStretch(state)
     end
 end
 
--- CHINA HAT
 local tau=math.pi*2
 local function createChinaHatDrawings()
     for i=1,#Cache.ChinaHatDrawings do pcall(function() Cache.ChinaHatDrawings[i][1]:Remove(); Cache.ChinaHatDrawings[i][2]:Remove() end) end
@@ -730,7 +722,6 @@ local function hatChangeStyle(value)
     notify("China Hat", "Стиль: "..value, 2)
 end
 
--- AURA
 local AURA_IDS={angel="97658130917593", starlight="134645216613107", heavenly="139300897520961", ribbon="132069507632161", sakura="81755778619404", wind="80694081850877", flow="119913533725648", star="73754563740680"}
 local AURA_ORDER={"angel","starlight","heavenly","ribbon","sakura","wind","flow","star"}
 local AuraSelected={}; for _, name in ipairs(AURA_ORDER) do AuraSelected[name]=false end
@@ -826,7 +817,6 @@ local function toggleOrbiz(value)
     notify("Орбизы", value and "Включены" or "Выключены", 2)
 end
 
--- COMBAT
 local function getClosestMurderInFov()
     local center=Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
     local bestP, bestDist=nil, math.huge
@@ -1055,7 +1045,6 @@ local function teleportToRole(role)
     end
 end
 
--- TROLL
 local EMOTE_IDS={Wave="rbxassetid://507770239", Point="rbxassetid://507770453", Cheer="rbxassetid://507770677", Dance="rbxassetid://507771019", Laugh="rbxassetid://507771583", Shrug="rbxassetid://507771821", Blush="rbxassetid://507771934", Pose="rbxassetid://507772051"}
 local ANIM_PACKS={["Adidas Sports"]={WalkAnim=18537392113, RunAnim=18537384940, JumpAnim=18537380791, FallAnim=18537367238, SwimIdle=18537387180, Swim=18537389531, Animation1=18537376492, Animation2=18537371272, ClimbAnim=18537363391}, ["Adidas Community"]={WalkAnim=122150855457006, RunAnim=82598234841035, JumpAnim=75290611992385, FallAnim=98600215928904, SwimIdle=109346520324160, Swim=133308483266208, Animation1=122257458498464, Animation2=102357151005774, ClimbAnim=88763136693023}, ["Adidas Aura"]={WalkAnim=83842218823011, RunAnim=118320322718866, JumpAnim=109996626521204, FallAnim=95603166884636, SwimIdle=94922130551805, Swim=134530128383903, Animation1=110211186840347, Animation2=114191137265065, ClimbAnim=97824616490448}, ["Wicked Popular"]={WalkAnim=92072849924640, RunAnim=72301599441680, JumpAnim=104325245285198, FallAnim=121152442762481, Animation1=118832222982049, ClimbAnim=131326830509784, SwimIdle=113199415118199, Swim=99384245425157, Animation2=76049494037641}, Elder={WalkAnim=10921111375, RunAnim=10921104374, JumpAnim=10921107367, FallAnim=10921105765, SwimIdle=10921110146, Swim=10921108971, ClimbAnim=10921100400, Animation1=10921101664, Animation2=10921102574}, Zombie={WalkAnim=10921355261, RunAnim=616163682, JumpAnim=10921351278, FallAnim=10921350320, SwimIdle=10921353442, Swim=10921352344, Animation1=10921344533, Animation2=10921345304, ClimbAnim=10921343576}, Mage={WalkAnim=10921152678, RunAnim=10921148209, JumpAnim=10921149743, FallAnim=10921148939, SwimIdle=10921151661, Swim=10921150788, ClimbAnim=10921143404, Animation1=10921144709, Animation2=10921145797}, ["Catwalk Glam"]={WalkAnim=109168724482748, RunAnim=81024476153754, JumpAnim=116936326516985, FallAnim=92294537340807, SwimIdle=98854111361360, Swim=134591743181628, ClimbAnim=119377220967554, Animation1=133806214992291, Animation2=94970088341563}, Astronaut={WalkAnim=10921046031, RunAnim=10921039308, JumpAnim=10921042494, FallAnim=10921040576, SwimIdle=10921045006, Swim=10921044000, ClimbAnim=10921032124, Animation1=10921034824, Animation2=10921036806}, ["Wicked 'Dancing Through Life'"]={WalkAnim=73718308412641, RunAnim=135515454877967, JumpAnim=78508480717326, FallAnim=78147885297412, SwimIdle=129183123083281, Swim=110657013921774, ClimbAnim=129447497744818, Animation1=92849173543269, Animation2=132238900951109}, Werewolf={WalkAnim=10921342074, RunAnim=10921336997, JumpAnim=nil, FallAnim=10921337907, SwimIdle=10921341319, Swim=10921340419, ClimbAnim=10921329322, Animation1=10921330408, Animation2=10921333667}, Superhero={WalkAnim=10921298616, RunAnim=10921291831, JumpAnim=10921294559, FallAnim=10921293373, SwimIdle=10921297391, Swim=10921295495, ClimbAnim=10921286911, Animation1=10921288909, Animation2=10921290167}, Toy={WalkAnim=10921312010, RunAnim=10921306285, JumpAnim=10921308158, FallAnim=10921307241, SwimIdle=10921310341, Swim=10921309319, ClimbAnim=10921300839, Animation1=10921301576, Animation2=nil}, ["No Boundaries"]={WalkAnim=18747074203, RunAnim=18747070484, JumpAnim=18747069148, FallAnim=18747062535, SwimIdle=18747071682, Swim=18747073181, ClimbAnim=18747060903, Animation1=18747067405, Animation2=18747063918}, NFL={WalkAnim=110358958299415, RunAnim=117333533048078, JumpAnim=119846112151352, FallAnim=129773241321032, SwimIdle=79090109939093, Swim=132697394189921, ClimbAnim=134630013742019, Animation1=92080889861410, Animation2=74451233229259}, ["Amazon Unboxed"]={WalkAnim=90478085024465, RunAnim=134824450619865, JumpAnim=121454505477205, FallAnim=94788218468396, SwimIdle=129126268464847, Swim=105962919001086, ClimbAnim=121145883950231, Animation1=98281136301627, Animation2=nil}, Vampire={WalkAnim=10921326949, RunAnim=10921320299, JumpAnim=10921322186, FallAnim=10921321317, SwimIdle=10921325443, Swim=10921324408, ClimbAnim=10921314188, Animation1=10921315373, Animation2=nil}, Ninja={Run=656118852, Walk=656121766, Jump=656117878, Fall=656115606, Swim=656119721, SwimIdle=656121397, Climb=656114359, Idle={656117400,656118341,886742569}}, Robot={Run=616091570, Walk=616095330, Jump=616090535, Fall=616087089, Swim=616092998, SwimIdle=616094091, Climb=616086039, Idle={616088211,616089559,885531463}}, Levitation={Run=616010382, Walk=616013216, Jump=616008936, Fall=616005863, Swim=616011509, SwimIdle=616012453, Climb=616003713, Idle={616006778,616008087,886862142}}, Stylish={Run=616140816, Walk=616146177, Jump=616139451, Fall=616134815, Swim=616143378, SwimIdle=616144772, Climb=616133594, Idle={616136790,616138447,886888594}}, Bubbly={Run=910025107, Walk=910034870, Jump=910016857, Fall=910001910, Swim=910028158, SwimIdle=910030921, Climb=909997997, Idle={910004836,910009958,1018536639}}, Cartoon={Run=742638842, Walk=742640026, Jump=742637942, Fall=742637151, Swim=742639220, SwimIdle=742639812, Climb=742636889, Idle={742637544,742638445,885477856}}}
 local ANIM_PACK_NAMES={} for name in pairs(ANIM_PACKS) do table.insert(ANIM_PACK_NAMES, name) end table.sort(ANIM_PACK_NAMES)
@@ -1152,7 +1141,6 @@ local function playSong(songName)
     local sound=Instance.new("Sound"); sound.SoundId=id; sound.Parent=game:GetService("CoreGui"); sound:Play(); Cache.SoundObj=sound
 end
 
--- AUTOFARM
 local function getValidCoins()
     local coins={}
     local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -1173,7 +1161,7 @@ end
 local function tweenToCoin(coin)
     if not coin or not coin.Parent or not coin:FindFirstChild("TouchInterest") then return false end
     local char=LocalPlayer.Character
-    if not char then return false end
+    if not char then return end
     local hrp=char:FindFirstChild("HumanoidRootPart")
     local hum=char:FindFirstChildOfClass("Humanoid")
     if not hrp or not hum then return false end
@@ -1240,7 +1228,6 @@ local function setupAutoFarm()
     end
 end
 
--- ОСНОВНОЙ ЦИКЛ
 local function updateVisuals()
     for _, player in ipairs(Players:GetPlayers()) do
         if player==LocalPlayer then
@@ -1267,7 +1254,10 @@ local function startMainUpdate()
     end)
 end
 
--- GUI (АДАПТИВНЫЙ ДЛЯ МОБИЛЫ)
+-- ========================================
+-- ===== GUI (С ПЕРЕТАСКИВАНИЕМ) =====
+-- ========================================
+
 local screenGui=Instance.new("ScreenGui")
 screenGui.Name="SkyHub"
 screenGui.ResetOnSpawn=false
@@ -1281,7 +1271,6 @@ container.Size=UDim2.new(1,0,1,0)
 container.BackgroundTransparency=1
 container.Parent=screenGui
 
--- Основное окно: занимает 80% ширины и 70% высоты экрана, центрировано
 local main=Instance.new("Frame")
 main.Name="Main"
 main.Size=UDim2.new(0.8,0,0.7,0)
@@ -1302,6 +1291,7 @@ local function applyTheme(name)
     Theme.Main=t.Main
     Theme.Card=t.Card
 end
+
 local header=Instance.new("Frame")
 header.Name="Header"
 header.Size=UDim2.new(1,0,0,52)
@@ -1331,8 +1321,32 @@ closeBtn.Font=FontBold
 closeBtn.AutoButtonColor=false
 closeBtn.BorderSizePixel=0
 closeBtn.Parent=header
-closeBtn.MouseButton1Click:Connect(function()
-    container.Visible=false
+closeBtn.MouseButton1Click:Connect(function() container.Visible=false end)
+
+-- ====== ПЕРЕТАСКИВАНИЕ ОКНА ======
+local dragData = {dragging = false, startPos = nil, dragStart = nil}
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragData.dragging = true
+        dragData.dragStart = input.Position
+        dragData.startPos = main.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragData.dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragData.dragStart
+        main.Position = UDim2.new(
+            dragData.startPos.X.Scale,
+            dragData.startPos.X.Offset + delta.X,
+            dragData.startPos.Y.Scale,
+            dragData.startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragData.dragging = false
+    end
 end)
 
 local tabBar=Instance.new("Frame")
@@ -1381,9 +1395,7 @@ contentPadding.PaddingLeft=UDim.new(0,12)
 contentPadding.PaddingRight=UDim.new(0,12)
 contentPadding.Parent=content
 
--- Табы (сокращённо, но все 10)
 local tabNames={"Player","ESP","Visual","Teleport","Fling","AutoFarm","Troll","Combat","Settings","Bio"}
-local tabIcons={}
 local tabButtons={}
 local tabPages={}
 local function updateCanvas()
@@ -1451,7 +1463,6 @@ for i, name in ipairs(tabNames) do
     btn.MouseButton1Click:Connect(function() switchTab(name) end)
 end
 
--- Функции для создания элементов (адаптированы под мобилу)
 local function createCard(page, titleText, order)
     local card=Instance.new("Frame")
     card.Name=titleText.."Card"
@@ -1666,7 +1677,7 @@ local function createColorInput(card, name, defaultColor, callback)
     end)
 end
 
--- Заполняем вкладки (кратко, но все функции)
+-- Заполнение вкладок (сокращённо)
 local pp=tabPages["Player"]
 local cardP=createCard(pp, "Player", 1)
 createSlider(cardP, "Скорость", 0,100,Settings.Speed, function(v) Settings.Speed=v; if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed=v end end)
@@ -1691,7 +1702,6 @@ createButton(cardP, "Сбросить Player", function()
     notify("Сброс", "Player сброшен", 2)
 end)
 
--- ESP
 local ep=tabPages["ESP"]
 local cardESP=createCard(ep, "Подсветка", 1)
 createToggle(cardESP, "ESP Убийца", Settings.MurderESP, function(v) Settings.MurderESP=v; startMainUpdate() end)
@@ -1702,7 +1712,6 @@ createToggle(cardESP, "ESP Невинный", Settings.InnocentESP, function(v) 
 createColorInput(cardESP, "Невинный", Settings.InnocentColor, function(c) Settings.InnocentColor=c; startMainUpdate() end)
 createToggle(cardESP, "Подсветка оружия", Settings.GunESP, function(v) Settings.GunESP=v; startMainUpdate() end)
 
--- Visual
 local vp=tabPages["Visual"]
 local cardVis=createCard(vp, "Визуал", 1)
 createToggle(cardVis, "Glow", Settings.GlowEnabled, function(v) toggleGlow(v) end)
@@ -1713,7 +1722,7 @@ createButton(cardVis, "Туман", function() applyWeather("Fog") end)
 createColorInput(cardVis, "Цвет перс", Settings.CharacterColor, function(c) applyCharacterColor(c) end)
 createToggle(cardVis, "Chams", Settings.ChamsEnabled, function(v) Settings.ChamsEnabled=v; updateChamsForAll(); startMainUpdate() end)
 createColorInput(cardVis, "Chams", Settings.ChamsColor, function(c) Settings.ChamsColor=c; if Settings.ChamsEnabled then updateChamsForAll() end end)
-createToggle(cardVis, "Трассеры", Settings.TracersEnabled, function(v) Settings.TracersEnabled=v; if v then for _,p in ipairs(Players:GetPlayers()) do if p~=LocalPlayer then createTracer(p) end end else clearAllTracers() end; startMainUpdate() end)
+createToggle(cardVis, "Трассеры", Settings.TracersEnabled, function(v) Settings.TracersEnabled=v; if v then for _,p in ipairs(Players:GetPlayers()) do if p~=LocalPlayer then createTracer(p) end else clearAllTracers() end; startMainUpdate() end)
 createColorInput(cardVis, "Трассеры", Settings.TracersColor, function(c) Settings.TracersColor=c; for userId,line in pairs(Cache.Tracers) do line.Color=c end end)
 createToggle(cardVis, "Круги прыжка", Settings.JumpCircles, function(v) Settings.JumpCircles=v; startMainUpdate() end)
 createColorInput(cardVis, "Круги", Settings.JumpCirclesColor, function(c) Settings.JumpCirclesColor=c end)
@@ -1742,7 +1751,6 @@ createButton(cardVis, "Небо Space", function() setupSky("Space") end)
 createButton(cardVis, "Небо Galaxy", function() setupSky("Galaxy") end)
 createButton(cardVis, "Удалить небо", removeSky)
 
--- Teleport
 local tp=tabPages["Teleport"]
 local cardTp=createCard(tp, "Телепорт", 1)
 createButton(cardTp, "Tp Murder", function() teleportToRole("Murder") end)
@@ -1781,7 +1789,6 @@ Players.PlayerAdded:Connect(refreshPlayerList)
 Players.PlayerRemoving:Connect(refreshPlayerList)
 createButton(cardTp, "Tp выбранному", function() if Settings.SelectedPlayer and Settings.SelectedPlayer.Character then teleportToPlayer(Settings.SelectedPlayer) end end)
 
--- Fling
 local fl=tabPages["Fling"]
 local cardFl=createCard(fl, "Флинг", 1)
 createButton(cardFl, "Флинг выбранного", function() if Settings.SelectedPlayer then flingPlayer(Settings.SelectedPlayer) end end)
@@ -1789,7 +1796,6 @@ createButton(cardFl, "Флинг Murder", function() local m=nil; for _, p in ip
 createButton(cardFl, "Флинг Sheriff", function() local s=nil; for _, p in ipairs(Players:GetPlayers()) do if p~=LocalPlayer and checkGun(p) then s=p; break end end if s then flingPlayer(s) else notify("Флинг", "Шериф не найден", 2) end end)
 createButton(cardFl, "Флинг всех", flingAll)
 
--- AutoFarm
 local af=tabPages["AutoFarm"]
 local cardAf=createCard(af, "Автофарм", 1)
 createToggle(cardAf, "AutoFarm", Settings.AutoFarmEnabled, function(v) Settings.AutoFarmEnabled=v; setupAutoFarm() end)
@@ -1798,7 +1804,6 @@ createSlider(cardAf, "Лимит монет", 10,100,Settings.AutoFarmCoinLimit,
 createSlider(cardAf, "Задержка", 0.05,0.5,Settings.AutoFarmCoinDelay, function(v) Settings.AutoFarmCoinDelay=v end)
 createToggle(cardAf, "Автореспавн", Settings.AutoRespawn, function(v) Settings.AutoRespawn=v end)
 
--- Troll
 local tr=tabPages["Troll"]
 local cardTr=createCard(tr, "Эмоции", 1)
 for name, _ in pairs(EMOTE_IDS) do createButton(cardTr, name, function() playEmote(name) end) end
@@ -1813,7 +1818,6 @@ createToggle(cardTr3, "JERK", Settings.JerkEnabled, function(v) toggleJerk(v) en
 local cardTr4=createCard(tr, "Песни", 4)
 for _, song in ipairs(SONGS) do createButton(cardTr4, song, function() playSong(song) end) end
 
--- Combat
 local cb=tabPages["Combat"]
 local cardCb=createCard(cb, "Aimbot", 1)
 createToggle(cardCb, "FOV Aimbot", Settings.FovAimbotEnabled, function(v) Settings.FovAimbotEnabled=v; if v then createFovCircle() end; setupFovAimbot() end)
@@ -1827,10 +1831,9 @@ createToggle(cardCb, "Grab Gun", Settings.GrabGunEnabled, function(v) Settings.G
 createToggle(cardCb, "Флинг Murder", Settings.FlingMurderer, function(v) Settings.FlingMurderer=v; if v then local m=nil; for _,p in ipairs(Players:GetPlayers()) do if p~=LocalPlayer and checkKnife(p) then m=p; break end end if m then flingPlayer(m) else notify("Флинг", "Убийца не найден", 2) end end end)
 createToggle(cardCb, "Флинг Sheriff", Settings.FlingSheriff, function(v) Settings.FlingSheriff=v; if v then local s=nil; for _,p in ipairs(Players:GetPlayers()) do if p~=LocalPlayer and checkGun(p) then s=p; break end end if s then flingPlayer(s) else notify("Флинг", "Шериф не найден", 2) end end end)
 
--- Settings
 local st=tabPages["Settings"]
 local cardSt=createCard(st, "Настройки", 1)
-createButton(cardSt, "Тема Dark", function() applyTheme("Dark"); notify("Тема", "Dark", 2) end)
+createButton(cardSt, "Тема Dark", function() applyTheme("Dark") end)
 createButton(cardSt, "Тема Blue", function() applyTheme("Blue") end)
 createButton(cardSt, "Тема Purple", function() applyTheme("Purple") end)
 createButton(cardSt, "Тема Green", function() applyTheme("Green") end)
@@ -1841,7 +1844,6 @@ createButton(cardSt, "Язык EN", function() Settings.Language="EN"; notify("�
 createSlider(cardSt, "Размер меню", 0.6,1.5,Settings.MenuScale, function(v) Settings.MenuScale=v; main.Size=UDim2.new(0.8*v,0,0.7*v,0); main.Position=UDim2.new(0.5,-0.4*v,0.5,-0.35*v) end)
 createButton(cardSt, "Сбросить настройки", function() notify("Сброс", "Все настройки сброшены", 2) end)
 
--- Bio
 local bio=tabPages["Bio"]
 local cardBio=createCard(bio, "Информация", 1)
 local function bioLabel(text)
@@ -1862,13 +1864,12 @@ bioLabel("📢 Telegram канал: @SkyHub_Deltax")
 bioLabel("💬 Discord: скоро")
 bioLabel("✨ Спасибо за использование!")
 
--- Запуск
 startMainUpdate()
 createFovCircle()
 createChinaHatDrawings()
 switchTab("Player")
 
--- Оверлей FPS (мобильный)
+-- Overlay FPS
 local overlayGui=Instance.new("ScreenGui")
 overlayGui.Name="SkyHubOverlay"
 overlayGui.ResetOnSpawn=false
@@ -1922,7 +1923,6 @@ oHeader.InputEnded:Connect(function(i)
     if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then oDragging=false end
 end)
 
--- Hotkey для открытия меню
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode==Enum.KeyCode.J then
@@ -1931,6 +1931,5 @@ UserInputService.InputBegan:Connect(function(input, gp)
     end
 end)
 
--- Уведомление о загрузке
 notify("SkyHub", "Загружен! Нажми J", 4)
 print("✅ SKYHUB MOBILE LOADED!")
