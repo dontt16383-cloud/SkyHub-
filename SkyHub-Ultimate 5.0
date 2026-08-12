@@ -1,5 +1,5 @@
 -- ========================================
--- ===== SKYHUB MOBILE EDITION v4.0 =====
+-- ===== SKYHUB ULTIMATE 5.0 =====
 -- ========================================
 
 local Players = game:GetService("Players")
@@ -11,6 +11,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ContentProvider = game:GetService("ContentProvider")
+local MaterialService = game:GetService("MaterialService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -1255,7 +1256,7 @@ local function startMainUpdate()
 end
 
 -- ========================================
--- ===== GUI (С ПЕРЕТАСКИВАНИЕМ) =====
+-- ===== GUI (Полный интерфейс) =====
 -- ========================================
 
 local screenGui=Instance.new("ScreenGui")
@@ -1323,29 +1324,47 @@ closeBtn.BorderSizePixel=0
 closeBtn.Parent=header
 closeBtn.MouseButton1Click:Connect(function() container.Visible=false end)
 
--- ====== ПЕРЕТАСКИВАНИЕ ОКНА ======
-local dragData = {dragging = false, startPos = nil, dragStart = nil}
+-- Мини-иконка (как в первом скрипте)
+local Mini=Instance.new("TextButton")
+Mini.Size=UDim2.new(0,55,0,55)
+Mini.Position=UDim2.fromScale(0.05,0.5)
+Mini.AnchorPoint=Vector2.new(0,0.5)
+Mini.BackgroundColor3=Theme.Accent
+Mini.Text="S"
+Mini.TextColor3=Color3.new(1,1,1)
+Mini.Font=Enum.Font.GothamBlack
+Mini.TextSize=28
+Mini.Visible=false
+Mini.Parent=screenGui
+Instance.new("UICorner",Mini).CornerRadius=UDim.new(0,15)
+
+closeBtn.MouseButton1Click:Connect(function()
+    main.Visible=false
+    Mini.Visible=true
+end)
+Mini.MouseButton1Click:Connect(function()
+    main.Visible=true
+    Mini.Visible=false
+end)
+
+-- Перетаскивание окна
+local dragData={dragging=false,startPos=nil,dragStart=nil}
 header.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragData.dragging = true
-        dragData.dragStart = input.Position
-        dragData.startPos = main.Position
+    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+        dragData.dragging=true
+        dragData.dragStart=input.Position
+        dragData.startPos=main.Position
     end
 end)
 UserInputService.InputChanged:Connect(function(input)
-    if dragData.dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragData.dragStart
-        main.Position = UDim2.new(
-            dragData.startPos.X.Scale,
-            dragData.startPos.X.Offset + delta.X,
-            dragData.startPos.Y.Scale,
-            dragData.startPos.Y.Offset + delta.Y
-        )
+    if dragData.dragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
+        local delta=input.Position-dragData.dragStart
+        main.Position=UDim2.new(dragData.startPos.X.Scale, dragData.startPos.X.Offset+delta.X, dragData.startPos.Y.Scale, dragData.startPos.Y.Offset+delta.Y)
     end
 end)
 UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragData.dragging = false
+    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+        dragData.dragging=false
     end
 end)
 
@@ -1677,7 +1696,7 @@ local function createColorInput(card, name, defaultColor, callback)
     end)
 end
 
--- Заполнение вкладок (сокращённо)
+-- Вкладки (заполняем так же, как в первом скрипте)
 local pp=tabPages["Player"]
 local cardP=createCard(pp, "Player", 1)
 createSlider(cardP, "Скорость", 0,100,Settings.Speed, function(v) Settings.Speed=v; if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed=v end end)
@@ -1857,19 +1876,23 @@ local function bioLabel(text)
     lbl.TextXAlignment=Enum.TextXAlignment.Left
     lbl.Parent=cardBio
 end
-bioLabel("🚀 SkyHub Mobile v4.0")
+bioLabel("🚀 SkyHub Ultimate 5.0")
 bioLabel("Автор: dont16383")
 bioLabel("📱 Telegram: @kazobl")
 bioLabel("📢 Telegram канал: @SkyHub_Deltax")
 bioLabel("💬 Discord: скоро")
 bioLabel("✨ Спасибо за использование!")
 
+-- ========================================
+-- ===== ЗАПУСК =====
+-- ========================================
+
 startMainUpdate()
 createFovCircle()
 createChinaHatDrawings()
 switchTab("Player")
 
--- Overlay FPS
+-- Оверлей FPS
 local overlayGui=Instance.new("ScreenGui")
 overlayGui.Name="SkyHubOverlay"
 overlayGui.ResetOnSpawn=false
@@ -1923,13 +1946,12 @@ oHeader.InputEnded:Connect(function(i)
     if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then oDragging=false end
 end)
 
-UserInputService.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode==Enum.KeyCode.J then
-        container.Visible=not container.Visible
-        if container.Visible then switchTab("Player") end
-    end
+-- Открытие по тапу на иконку S
+Mini.MouseButton1Click:Connect(function()
+    main.Visible=true
+    Mini.Visible=false
+    switchTab("Player")
 end)
 
-notify("SkyHub", "Загружен! Нажми J", 4)
-print("✅ SKYHUB MOBILE LOADED!")
+notify("SkyHub", "Загружен! Нажми на S или оверлей", 4)
+print("✅ SKYHUB ULTIMATE 5.0 LOADED!")
