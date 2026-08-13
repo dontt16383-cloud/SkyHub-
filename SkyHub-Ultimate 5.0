@@ -1,6 +1,7 @@
 -- ========================================
 -- SKYHUB ULTIMATE 5.0 (MOBILE EDITION)
 -- Исправлено для телефонов: убраны Drawing и VirtualInputManager
+-- Добавлены: загрузочный экран, прокрутка вкладок, фикс позиции
 -- Автор: dont16383
 -- ========================================
 
@@ -17,9 +18,87 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+-- ========================================
+-- ЗАГРУЗОЧНЫЙ ЭКРАН
+-- ========================================
+local LoadGui = Instance.new("ScreenGui")
+LoadGui.Name = "LoadGui"
+LoadGui.ResetOnSpawn = false
+LoadGui.IgnoreGuiInset = true
+LoadGui.Parent = PlayerGui
+
+local LoadBg = Instance.new("Frame")
+LoadBg.Size = UDim2.new(1, 0, 1, 0)
+LoadBg.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+LoadBg.BorderSizePixel = 0
+LoadBg.Parent = LoadGui
+
+local LoadLogo = Instance.new("TextLabel")
+LoadLogo.Size = UDim2.new(0, 300, 0, 100)
+LoadLogo.Position = UDim2.new(0.5, -150, 0.4, -50)
+LoadLogo.AnchorPoint = Vector2.new(0.5, 0.5)
+LoadLogo.BackgroundTransparency = 1
+LoadLogo.Text = "S"
+LoadLogo.TextColor3 = Color3.fromRGB(160, 80, 255)
+LoadLogo.Font = Enum.Font.GothamBlack
+LoadLogo.TextSize = 100
+LoadLogo.Parent = LoadBg
+
+local LoadTitle = Instance.new("TextLabel")
+LoadTitle.Size = UDim2.new(0, 400, 0, 50)
+LoadTitle.Position = UDim2.new(0.5, -200, 0.5, -25)
+LoadTitle.AnchorPoint = Vector2.new(0.5, 0.5)
+LoadTitle.BackgroundTransparency = 1
+LoadTitle.Text = "SKYHUB"
+LoadTitle.TextColor3 = Color3.new(1, 1, 1)
+LoadTitle.Font = Enum.Font.GothamBold
+LoadTitle.TextSize = 28
+LoadTitle.Parent = LoadBg
+
+local LoadBarBack = Instance.new("Frame")
+LoadBarBack.Size = UDim2.new(0, 350, 0, 8)
+LoadBarBack.Position = UDim2.new(0.5, -175, 0.6, 0)
+LoadBarBack.AnchorPoint = Vector2.new(0.5, 0.5)
+LoadBarBack.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+LoadBarBack.BorderSizePixel = 0
+LoadBarBack.Parent = LoadBg
+Instance.new("UICorner", LoadBarBack).CornerRadius = UDim.new(1, 0)
+
+local LoadBar = Instance.new("Frame")
+LoadBar.Size = UDim2.new(0, 0, 1, 0)
+LoadBar.BackgroundColor3 = Color3.fromRGB(145, 70, 255)
+LoadBar.BorderSizePixel = 0
+LoadBar.Parent = LoadBarBack
+Instance.new("UICorner", LoadBar).CornerRadius = UDim.new(1, 0)
+
+local LoadText = Instance.new("TextLabel")
+LoadText.Size = UDim2.new(0, 400, 0, 30)
+LoadText.Position = UDim2.new(0.5, -200, 0.66, 0)
+LoadText.AnchorPoint = Vector2.new(0.5, 0.5)
+LoadText.BackgroundTransparency = 1
+LoadText.Text = "Loading SkyHub..."
+LoadText.TextColor3 = Color3.fromRGB(170, 170, 180)
+LoadText.Font = Enum.Font.Gotham
+LoadText.TextSize = 14
+LoadText.Parent = LoadBg
+
+-- Анимация загрузки
+for i = 1, 100 do
+    LoadBar.Size = UDim2.new(i/100, 0, 1, 0)
+    LoadText.Text = "Loading SkyHub... "..i.."%"
+    task.wait(0.01)
+end
+task.wait(0.3)
+
+-- ========================================
+-- УДАЛЯЕМ СТАРЫЕ GUI
+-- ========================================
 if PlayerGui:FindFirstChild("SkyHub") then PlayerGui.SkyHub:Destroy() end
 if PlayerGui:FindFirstChild("SkyHubOverlay") then PlayerGui.SkyHubOverlay:Destroy() end
 
+-- ========================================
+-- ТЕМА И ШРИФТЫ
+-- ========================================
 local Theme = {
     Background = Color3.fromRGB(15, 15, 18),
     Card = Color3.fromRGB(22, 22, 27),
@@ -58,7 +137,7 @@ local Settings = {
     GlowEnabled = false,
     ChamsEnabled = false,
     ChamsColor = Color3.fromRGB(138, 43, 226),
-    TracersEnabled = false, -- отключено на телефоне
+    TracersEnabled = false,
     TracersColor = Color3.fromRGB(138, 43, 226),
     JumpCircles = false,
     JumpCirclesColor = Color3.fromRGB(138, 43, 226),
@@ -94,7 +173,7 @@ local Settings = {
     Headless = false,
     Korblox = false,
     JerkEnabled = false,
-    FovAimbotEnabled = false, -- отключено (Drawing)
+    FovAimbotEnabled = false,
     FovRadius = 120,
     AimSmoothness = 0.5,
     AimPredict = true,
@@ -163,6 +242,7 @@ local Cache = {
     AnimTrack = nil,
     SoundObj = nil,
     CurrentEmote = nil,
+    SavedMainPosition = nil, -- для сохранения позиции меню
 }
 
 local function safeDisconnect(connection)
@@ -2130,7 +2210,9 @@ CloseBtn.AutoButtonColor = false
 CloseBtn.BorderSizePixel = 0
 CloseBtn.Parent = Header
 CloseBtn.MouseButton1Click:Connect(function()
-    Container.Visible = false
+    Cache.SavedMainPosition = Main.Position
+    Main.Visible = false
+    Mini.Visible = true
 end)
 
 -- Mini Icon (сворачивание)
@@ -2147,14 +2229,12 @@ Mini.Visible = false
 Mini.Parent = ScreenGui
 Instance.new("UICorner", Mini).CornerRadius = UDim.new(0, 15)
 
-CloseBtn.MouseButton1Click:Connect(function()
-    Main.Visible = false
-    Mini.Visible = true
-end)
-
 Mini.MouseButton1Click:Connect(function()
     Main.Visible = true
     Mini.Visible = false
+    if Cache.SavedMainPosition then
+        Main.Position = Cache.SavedMainPosition
+    end
 end)
 
 -- Dragging
@@ -2189,13 +2269,18 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Tab Bar
-local TabBar = Instance.new("Frame")
+-- Tab Bar (ScrollingFrame для прокрутки вкладок)
+local TabBar = Instance.new("ScrollingFrame")
 TabBar.Name = "TabBar"
 TabBar.Size = UDim2.new(0, 160, 1, -64)
 TabBar.Position = UDim2.new(0, 8, 0, 56)
 TabBar.BackgroundColor3 = Theme.Card
 TabBar.BorderSizePixel = 0
+TabBar.ScrollingDirection = Enum.ScrollingDirection.Y
+TabBar.ScrollBarThickness = 4
+TabBar.ScrollBarImageColor3 = Theme.Accent
+TabBar.AutomaticCanvasSize = Enum.AutomaticSize.Y
+TabBar.CanvasSize = UDim2.new(0, 0, 0, 0)
 TabBar.Parent = Main
 
 local TabBarLayout = Instance.new("UIListLayout")
@@ -2763,9 +2848,6 @@ end)
 
 createToggle(visualCard, "Трассеры", Settings.TracersEnabled, function(value)
     Settings.TracersEnabled = value
-    if value then
-        -- отключено на телефоне
-    end
     startMainUpdate()
 end)
 createColorInput(visualCard, "Трассеры", Settings.TracersColor, function(value)
@@ -3062,8 +3144,6 @@ end
 local combatPage = TabPages["Combat"]
 local combatCard = createCard(combatPage, "Aimbot", 1)
 
--- Убираем FOV круг (он использует Drawing)
--- Оставляем только настройки аима, но без визуализации
 createSlider(combatCard, "Smoothness", 1, 100, Settings.AimSmoothness * 100, function(value)
     Settings.AimSmoothness = value / 100
 end)
@@ -3166,10 +3246,6 @@ local function sheriffAutoShootLoop()
                 else
                     Camera.CFrame = lookAt
                 end
-
-                -- Убираем VIM, оставляем только наведение
-                -- Вместо эмуляции клика можно оставить просто визуальное наведение
-                -- (на телефоне стрельба производится нажатием на экран)
             end
         end
     end
@@ -3402,13 +3478,14 @@ Mini.MouseButton1Click:Connect(function()
 end)
 
 -- ========================================
--- УВЕДОМЛЕНИЕ О ЗАГРУЗКЕ И АВТООТКРЫТИЕ
+-- ЗАКРЫВАЕМ ЗАГРУЗОЧНЫЙ ЭКРАН И ОТКРЫВАЕМ МЕНЮ
 -- ========================================
+task.wait(0.3)
+LoadGui:Destroy() -- убираем загрузочный экран
+
 notify("SkyHub", "Загружен!", 2)
 print("✅ SKYHUB ULTIMATE 5.0 (MOBILE) LOADED!")
 
--- Автооткрытие меню после загрузки
-task.wait(0.3)
 Container.Visible = true
 Main.Visible = true
 Mini.Visible = false
