@@ -3815,7 +3815,14 @@ Mini.MouseButton1Click:Connect(function()
 end)
 
 -- ========================================
--- УВЕДОМЛЕНИЕ О ЗАГРУЗКЕ
+-- УВЕДОМЛЕНИЕ О ЗАГРУЗКЕ И АВТООТКРЫТИЕ
 -- ========================================
-notify("SkyHub", "Загружен! Нажми на S или оверлей", 4)
+notify("SkyHub", "Загружен!", 2)
 print("✅ SKYHUB ULTIMATE 5.0 LOADED!")
+
+-- Автооткрытие меню после загрузки
+task.wait(0.3)
+Container.Visible = true
+Main.Visible = true
+Mini.Visible = false
+switchTab("Player")
