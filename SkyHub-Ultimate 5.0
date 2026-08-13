@@ -1,18 +1,14 @@
 -- ========================================
--- SKYHUB ULTIMATE 5.0
--- Объединение лучших функций из SkyHub и PlanetHub
+-- SKYHUB ULTIMATE 5.0 (MOBILE EDITION)
+-- Исправлено для телефонов: убраны Drawing и VirtualInputManager
 -- Автор: dont16383
 -- ========================================
 
--- ========================================
--- СЕРВИСЫ
--- ========================================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ContentProvider = game:GetService("ContentProvider")
@@ -21,13 +17,9 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Удаляем старые GUI
 if PlayerGui:FindFirstChild("SkyHub") then PlayerGui.SkyHub:Destroy() end
 if PlayerGui:FindFirstChild("SkyHubOverlay") then PlayerGui.SkyHubOverlay:Destroy() end
 
--- ========================================
--- ТЕМА И ШРИФТЫ
--- ========================================
 local Theme = {
     Background = Color3.fromRGB(15, 15, 18),
     Card = Color3.fromRGB(22, 22, 27),
@@ -42,11 +34,7 @@ local Theme = {
 local Font = Enum.Font.GothamMedium
 local FontBold = Enum.Font.GothamBold
 
--- ========================================
--- НАСТРОЙКИ
--- ========================================
 local Settings = {
-    -- Player
     Speed = 16,
     JumpPower = 50,
     CharacterScale = 1,
@@ -56,8 +44,6 @@ local Settings = {
     FlyAnimation = false,
     InfiniteJump = false,
     NoclipEnabled = false,
-
-    -- ESP
     MurderESP = false,
     MurderColor = Color3.fromRGB(255, 60, 60),
     SheriffESP = false,
@@ -65,8 +51,6 @@ local Settings = {
     InnocentESP = false,
     InnocentColor = Color3.fromRGB(150, 80, 240),
     GunESP = false,
-
-    -- Visual
     SkyPreset = "HD",
     WeatherPreset = "Clear",
     TimeOfDay = 14,
@@ -74,7 +58,7 @@ local Settings = {
     GlowEnabled = false,
     ChamsEnabled = false,
     ChamsColor = Color3.fromRGB(138, 43, 226),
-    TracersEnabled = false,
+    TracersEnabled = false, -- отключено на телефоне
     TracersColor = Color3.fromRGB(138, 43, 226),
     JumpCircles = false,
     JumpCirclesColor = Color3.fromRGB(138, 43, 226),
@@ -99,28 +83,18 @@ local Settings = {
     TexturePackEnabled = false,
     StretchEnabled = false,
     StretchFactor = 0.75,
-
-    -- Teleport
     SavedLobbyPosition = nil,
     SavedMapPosition = nil,
     SelectedPlayer = nil,
-
-    -- Fling (используем функции)
-
-    -- AutoFarm
     AutoFarmEnabled = false,
     AutoFarmSpeed = 20,
     AutoFarmCoinLimit = 40,
     AutoFarmCoinDelay = 0.15,
     AutoRespawn = true,
-
-    -- Troll
     Headless = false,
     Korblox = false,
     JerkEnabled = false,
-
-    -- Combat
-    FovAimbotEnabled = false,
+    FovAimbotEnabled = false, -- отключено (Drawing)
     FovRadius = 120,
     AimSmoothness = 0.5,
     AimPredict = true,
@@ -132,13 +106,9 @@ local Settings = {
     FlingMurderer = false,
     FlingSheriff = false,
     GrabGunEnabled = false,
-
-    -- Settings
     ThemeName = "Purple",
     Language = "RU",
     MenuScale = 1,
-
-    -- Дополнительные (из PlanetHub)
     AnimPackEnabled = false,
     AnimPack = "",
     AntiAFKEnabled = false,
@@ -150,9 +120,6 @@ local Settings = {
     WallHopEnabled = false,
 }
 
--- ========================================
--- КЭШ
--- ========================================
 local Cache = {
     FlyKeys = { F = 0, B = 0, L = 0, R = 0 },
     FlyRunning = false,
@@ -171,14 +138,11 @@ local Cache = {
     XRayParts = {},
     Tracers = {},
     TrailAttachments = {},
-    FovCircle = nil,
-    FovConnection = nil,
     MainConn = nil,
     WallHopConnection = nil,
     SheriffAutoShootConnection = nil,
     ChinaHatParts = {},
     ChinaHatConnection = nil,
-    ChinaHatDrawings = {},
     TextureState = {},
     TextureVariantsBuilt = false,
     AuraParticles = {},
@@ -190,13 +154,9 @@ local Cache = {
     OrbizConnection = nil,
     KillAllConn = nil,
     KillAllRemote = nil,
-    ShootButton = nil,
     GrabGunRunning = false,
     afkConn = nil,
     noclipConn = nil,
-    BindConnections = {},
-    BindPopup = nil,
-    StretchConnection = nil,
     BHopConn = nil,
     BHopBV = nil,
     BHopActive = false,
@@ -205,9 +165,6 @@ local Cache = {
     CurrentEmote = nil,
 }
 
--- ========================================
--- ХЕЛПЕРЫ
--- ========================================
 local function safeDisconnect(connection)
     if connection and typeof(connection) == "RBXScriptConnection" then
         pcall(function() connection:Disconnect() end)
@@ -309,34 +266,23 @@ end
 
 local function getRoleColor(player)
     local role = getRole(player)
-    if role == "Murder" then
-        return Settings.MurderColor
-    elseif role == "Sheriff" then
-        return Settings.SheriffColor
-    else
-        return Settings.InnocentColor
-    end
+    if role == "Murder" then return Settings.MurderColor
+    elseif role == "Sheriff" then return Settings.SheriffColor
+    else return Settings.InnocentColor end
 end
 
 -- ========================================
--- ПОЛЁТ
+-- ПОЛЁТ (полностью рабочий)
 -- ========================================
 local function stopFly()
     Cache.FlyRunning = false
-    if Cache.FlyBodyGyro then
-        pcall(function() Cache.FlyBodyGyro:Destroy() end)
-        Cache.FlyBodyGyro = nil
-    end
-    if Cache.FlyBodyVelocity then
-        pcall(function() Cache.FlyBodyVelocity:Destroy() end)
-        Cache.FlyBodyVelocity = nil
-    end
+    if Cache.FlyBodyGyro then pcall(function() Cache.FlyBodyGyro:Destroy() end); Cache.FlyBodyGyro = nil end
+    if Cache.FlyBodyVelocity then pcall(function() Cache.FlyBodyVelocity:Destroy() end); Cache.FlyBodyVelocity = nil end
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.PlatformStand = false
     end
     Cache.FlyKeys = { F = 0, B = 0, L = 0, R = 0 }
-    safeDisconnect(Cache.FlyConn)
-    Cache.FlyConn = nil
+    safeDisconnect(Cache.FlyConn); Cache.FlyConn = nil
 end
 
 local function startFly()
@@ -424,12 +370,8 @@ setupFlyKeys()
 -- ========================================
 local function stopBHop()
     Cache.BHopActive = false
-    safeDisconnect(Cache.BHopConn)
-    Cache.BHopConn = nil
-    if Cache.BHopBV then
-        pcall(function() Cache.BHopBV:Destroy() end)
-        Cache.BHopBV = nil
-    end
+    safeDisconnect(Cache.BHopConn); Cache.BHopConn = nil
+    if Cache.BHopBV then pcall(function() Cache.BHopBV:Destroy() end); Cache.BHopBV = nil end
 end
 
 local function startBHop()
@@ -449,10 +391,7 @@ local function startBHop()
 
     local lastJump = 0
     Cache.BHopConn = RunService.Stepped:Connect(function()
-        if not Cache.BHopActive then
-            stopBHop()
-            return
-        end
+        if not Cache.BHopActive then stopBHop(); return end
         local character = LocalPlayer.Character
         if not character then return end
         local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -733,57 +672,13 @@ local function updateChamsForAll()
 end
 
 -- ========================================
--- TRACERS
+-- TRACERS (отключены на телефоне)
 -- ========================================
-local function createTracer(player)
-    if not player or player == LocalPlayer then return end
-    if Cache.Tracers[player.UserId] then return end
-    local line = Drawing.new("Line")
-    line.Thickness = 2
-    line.Transparency = 0.8
-    line.Visible = false
-    line.Color = getRoleColor(player)
-    Cache.Tracers[player.UserId] = line
-end
-
-local function updateTracers()
-    if not Settings.TracersEnabled then
-        for _, line in pairs(Cache.Tracers) do
-            line.Visible = false
-        end
-        return
-    end
-    local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
-    for userId, line in pairs(Cache.Tracers) do
-        local player = Players:GetPlayerByUserId(userId)
-        if not player or not player.Character then
-            line.Visible = false
-            goto continue
-        end
-        local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
-        if not rootPart then
-            line.Visible = false
-            goto continue
-        end
-        local screenPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
-        if not onScreen then
-            line.Visible = false
-            goto continue
-        end
-        line.From = center
-        line.To = Vector2.new(screenPos.X, screenPos.Y)
-        line.Visible = true
-        line.Color = getRoleColor(player)
-        ::continue::
-    end
-end
-
 local function clearAllTracers()
-    for userId, line in pairs(Cache.Tracers) do
-        pcall(function() line:Remove() end)
-    end
     Cache.Tracers = {}
 end
+local function updateTracers() end
+local function createTracer(player) end
 
 -- ========================================
 -- TRAILS
@@ -1015,142 +910,23 @@ end
 -- SKYBOX
 -- ========================================
 local SKYBOX_ASSETS = {
-    ["Black Storm"] = {
-        Bk = "rbxassetid://15502511288",
-        Dn = "rbxassetid://15502508460",
-        Ft = "rbxassetid://15502510289",
-        Lf = "rbxassetid://15502507918",
-        Rt = "rbxassetid://15502509398",
-        Up = "rbxassetid://15502511911",
-    },
-    ["HD"] = {
-        Bk = "http://www.roblox.com/asset/?id=16553658937",
-        Dn = "http://www.roblox.com/asset/?id=16553660713",
-        Ft = "http://www.roblox.com/asset/?id=16553662144",
-        Lf = "http://www.roblox.com/asset/?id=16553664042",
-        Rt = "http://www.roblox.com/asset/?id=16553665766",
-        Up = "http://www.roblox.com/asset/?id=16553667750",
-    },
-    ["Snow"] = {
-        Bk = "http://www.roblox.com/asset/?id=155657655",
-        Dn = "http://www.roblox.com/asset/?id=155674246",
-        Ft = "http://www.roblox.com/asset/?id=155657609",
-        Lf = "http://www.roblox.com/asset/?id=155657671",
-        Rt = "http://www.roblox.com/asset/?id=155657619",
-        Up = "http://www.roblox.com/asset/?id=155674931",
-    },
-    ["Blue Space"] = {
-        Bk = "rbxassetid://15536110634",
-        Dn = "rbxassetid://15536112543",
-        Ft = "rbxassetid://15536116141",
-        Lf = "rbxassetid://15536114370",
-        Rt = "rbxassetid://15536118762",
-        Up = "rbxassetid://15536117282",
-    },
-    ["Realistic"] = {
-        Bk = "rbxassetid://653719502",
-        Dn = "rbxassetid://653718790",
-        Ft = "rbxassetid://653719067",
-        Lf = "rbxassetid://653719190",
-        Rt = "rbxassetid://653718931",
-        Up = "rbxassetid://653719321",
-    },
-    ["Stormy"] = {
-        Bk = "http://www.roblox.com/asset/?id=18703245834",
-        Dn = "http://www.roblox.com/asset/?id=18703243349",
-        Ft = "http://www.roblox.com/asset/?id=18703240532",
-        Lf = "http://www.roblox.com/asset/?id=18703237556",
-        Rt = "http://www.roblox.com/asset/?id=18703235430",
-        Up = "http://www.roblox.com/asset/?id=18703232671",
-    },
-    ["Pink"] = {
-        Bk = "rbxassetid://12216109205",
-        Dn = "rbxassetid://12216109875",
-        Ft = "rbxassetid://12216109489",
-        Lf = "rbxassetid://12216110170",
-        Rt = "rbxassetid://12216110471",
-        Up = "rbxassetid://12216108877",
-    },
-    ["Sunset"] = {
-        Bk = "rbxassetid://600830446",
-        Dn = "rbxassetid://600831635",
-        Ft = "rbxassetid://600832720",
-        Lf = "rbxassetid://600886090",
-        Rt = "rbxassetid://600833862",
-        Up = "rbxassetid://600835177",
-    },
-    ["Space"] = {
-        Bk = "http://www.roblox.com/asset/?id=166509999",
-        Dn = "http://www.roblox.com/asset/?id=166510057",
-        Ft = "http://www.roblox.com/asset/?id=166510116",
-        Lf = "http://www.roblox.com/asset/?id=166510092",
-        Rt = "http://www.roblox.com/asset/?id=166510131",
-        Up = "http://www.roblox.com/asset/?id=166510114",
-    },
-    ["Roblox Default"] = {
-        Bk = "rbxasset://textures/sky/sky512_bk.tex",
-        Dn = "rbxasset://textures/sky/sky512_dn.tex",
-        Ft = "rbxasset://textures/sky/sky512_ft.tex",
-        Lf = "rbxasset://textures/sky/sky512_lf.tex",
-        Rt = "rbxasset://textures/sky/sky512_rt.tex",
-        Up = "rbxasset://textures/sky/sky512_up.tex",
-    },
-    ["Red Night"] = {
-        Bk = "http://www.roblox.com/asset/?id=401664839",
-        Dn = "http://www.roblox.com/asset/?id=401664862",
-        Ft = "http://www.roblox.com/asset/?id=401664960",
-        Lf = "http://www.roblox.com/asset/?id=401664881",
-        Rt = "http://www.roblox.com/asset/?id=401664901",
-        Up = "http://www.roblox.com/asset/?id=401664936",
-    },
-    ["Pink Skies"] = {
-        Bk = "http://www.roblox.com/asset/?id=151165214",
-        Dn = "http://www.roblox.com/asset/?id=151165197",
-        Ft = "http://www.roblox.com/asset/?id=151165224",
-        Lf = "http://www.roblox.com/asset/?id=151165191",
-        Rt = "http://www.roblox.com/asset/?id=151165206",
-        Up = "http://www.roblox.com/asset/?id=151165227",
-    },
-    ["Purple Sunset"] = {
-        Bk = "rbxassetid://264908339",
-        Dn = "rbxassetid://264907909",
-        Ft = "rbxassetid://264909420",
-        Lf = "rbxassetid://264909758",
-        Rt = "rbxassetid://264908886",
-        Up = "rbxassetid://264907379",
-    },
-    ["Blue Night"] = {
-        Bk = "http://www.roblox.com/asset/?id=12064107",
-        Dn = "http://www.roblox.com/asset/?id=12064152",
-        Ft = "http://www.roblox.com/asset/?id=12064121",
-        Lf = "http://www.roblox.com/asset/?id=12063984",
-        Rt = "http://www.roblox.com/asset/?id=12064115",
-        Up = "http://www.roblox.com/asset/?id=12064131",
-    },
-    ["Summer"] = {
-        Bk = "rbxassetid://16648590964",
-        Dn = "rbxassetid://16648617436",
-        Ft = "rbxassetid://16648595424",
-        Lf = "rbxassetid://16648566370",
-        Rt = "rbxassetid://16648577071",
-        Up = "rbxassetid://16648598180",
-    },
-    ["Galaxy"] = {
-        Bk = "rbxassetid://15983968922",
-        Dn = "rbxassetid://15983966825",
-        Ft = "rbxassetid://15983965025",
-        Lf = "rbxassetid://15983967420",
-        Rt = "rbxassetid://15983966246",
-        Up = "rbxassetid://15983964246",
-    },
-    ["Minecraft"] = {
-        Bk = "rbxassetid://8735166756",
-        Dn = "http://www.roblox.com/asset/?id=8735166707",
-        Ft = "http://www.roblox.com/asset/?id=8735231668",
-        Lf = "http://www.roblox.com/asset/?id=8735166755",
-        Rt = "http://www.roblox.com/asset/?id=8735166751",
-        Up = "http://www.roblox.com/asset/?id=8735166729",
-    },
+    ["Black Storm"] = { Bk = "rbxassetid://15502511288", Dn = "rbxassetid://15502508460", Ft = "rbxassetid://15502510289", Lf = "rbxassetid://15502507918", Rt = "rbxassetid://15502509398", Up = "rbxassetid://15502511911" },
+    ["HD"] = { Bk = "http://www.roblox.com/asset/?id=16553658937", Dn = "http://www.roblox.com/asset/?id=16553660713", Ft = "http://www.roblox.com/asset/?id=16553662144", Lf = "http://www.roblox.com/asset/?id=16553664042", Rt = "http://www.roblox.com/asset/?id=16553665766", Up = "http://www.roblox.com/asset/?id=16553667750" },
+    ["Snow"] = { Bk = "http://www.roblox.com/asset/?id=155657655", Dn = "http://www.roblox.com/asset/?id=155674246", Ft = "http://www.roblox.com/asset/?id=155657609", Lf = "http://www.roblox.com/asset/?id=155657671", Rt = "http://www.roblox.com/asset/?id=155657619", Up = "http://www.roblox.com/asset/?id=155674931" },
+    ["Blue Space"] = { Bk = "rbxassetid://15536110634", Dn = "rbxassetid://15536112543", Ft = "rbxassetid://15536116141", Lf = "rbxassetid://15536114370", Rt = "rbxassetid://15536118762", Up = "rbxassetid://15536117282" },
+    ["Realistic"] = { Bk = "rbxassetid://653719502", Dn = "rbxassetid://653718790", Ft = "rbxassetid://653719067", Lf = "rbxassetid://653719190", Rt = "rbxassetid://653718931", Up = "rbxassetid://653719321" },
+    ["Stormy"] = { Bk = "http://www.roblox.com/asset/?id=18703245834", Dn = "http://www.roblox.com/asset/?id=18703243349", Ft = "http://www.roblox.com/asset/?id=18703240532", Lf = "http://www.roblox.com/asset/?id=18703237556", Rt = "http://www.roblox.com/asset/?id=18703235430", Up = "http://www.roblox.com/asset/?id=18703232671" },
+    ["Pink"] = { Bk = "rbxassetid://12216109205", Dn = "rbxassetid://12216109875", Ft = "rbxassetid://12216109489", Lf = "rbxassetid://12216110170", Rt = "rbxassetid://12216110471", Up = "rbxassetid://12216108877" },
+    ["Sunset"] = { Bk = "rbxassetid://600830446", Dn = "rbxassetid://600831635", Ft = "rbxassetid://600832720", Lf = "rbxassetid://600886090", Rt = "rbxassetid://600833862", Up = "rbxassetid://600835177" },
+    ["Space"] = { Bk = "http://www.roblox.com/asset/?id=166509999", Dn = "http://www.roblox.com/asset/?id=166510057", Ft = "http://www.roblox.com/asset/?id=166510116", Lf = "http://www.roblox.com/asset/?id=166510092", Rt = "http://www.roblox.com/asset/?id=166510131", Up = "http://www.roblox.com/asset/?id=166510114" },
+    ["Roblox Default"] = { Bk = "rbxasset://textures/sky/sky512_bk.tex", Dn = "rbxasset://textures/sky/sky512_dn.tex", Ft = "rbxasset://textures/sky/sky512_ft.tex", Lf = "rbxasset://textures/sky/sky512_lf.tex", Rt = "rbxasset://textures/sky/sky512_rt.tex", Up = "rbxasset://textures/sky/sky512_up.tex" },
+    ["Red Night"] = { Bk = "http://www.roblox.com/asset/?id=401664839", Dn = "http://www.roblox.com/asset/?id=401664862", Ft = "http://www.roblox.com/asset/?id=401664960", Lf = "http://www.roblox.com/asset/?id=401664881", Rt = "http://www.roblox.com/asset/?id=401664901", Up = "http://www.roblox.com/asset/?id=401664936" },
+    ["Pink Skies"] = { Bk = "http://www.roblox.com/asset/?id=151165214", Dn = "http://www.roblox.com/asset/?id=151165197", Ft = "http://www.roblox.com/asset/?id=151165224", Lf = "http://www.roblox.com/asset/?id=151165191", Rt = "http://www.roblox.com/asset/?id=151165206", Up = "http://www.roblox.com/asset/?id=151165227" },
+    ["Purple Sunset"] = { Bk = "rbxassetid://264908339", Dn = "rbxassetid://264907909", Ft = "rbxassetid://264909420", Lf = "rbxassetid://264909758", Rt = "rbxassetid://264908886", Up = "rbxassetid://264907379" },
+    ["Blue Night"] = { Bk = "http://www.roblox.com/asset/?id=12064107", Dn = "http://www.roblox.com/asset/?id=12064152", Ft = "http://www.roblox.com/asset/?id=12064121", Lf = "http://www.roblox.com/asset/?id=12063984", Rt = "http://www.roblox.com/asset/?id=12064115", Up = "http://www.roblox.com/asset/?id=12064131" },
+    ["Summer"] = { Bk = "rbxassetid://16648590964", Dn = "rbxassetid://16648617436", Ft = "rbxassetid://16648595424", Lf = "rbxassetid://16648566370", Rt = "rbxassetid://16648577071", Up = "rbxassetid://16648598180" },
+    ["Galaxy"] = { Bk = "rbxassetid://15983968922", Dn = "rbxassetid://15983966825", Ft = "rbxassetid://15983965025", Lf = "rbxassetid://15983967420", Rt = "rbxassetid://15983966246", Up = "rbxassetid://15983964246" },
+    ["Minecraft"] = { Bk = "rbxassetid://8735166756", Dn = "http://www.roblox.com/asset/?id=8735166707", Ft = "http://www.roblox.com/asset/?id=8735231668", Lf = "http://www.roblox.com/asset/?id=8735166755", Rt = "http://www.roblox.com/asset/?id=8735166751", Up = "http://www.roblox.com/asset/?id=8735166729" },
 }
 
 local function setupSky(skyName)
@@ -1402,27 +1178,8 @@ local function applyStretch(state)
 end
 
 -- ========================================
--- CHINA HAT
+-- CHINA HAT (только классика)
 -- ========================================
-local tau = math.pi * 2
-
-local function createChinaHatDrawings()
-    for i = 1, #Cache.ChinaHatDrawings do
-        pcall(function()
-            Cache.ChinaHatDrawings[i][1]:Remove()
-            Cache.ChinaHatDrawings[i][2]:Remove()
-        end)
-    end
-    Cache.ChinaHatDrawings = {}
-    for i = 1, Settings.ChinaHatSides or 25 do
-        Cache.ChinaHatDrawings[i] = { Drawing.new('Line'), Drawing.new('Triangle') }
-        Cache.ChinaHatDrawings[i][1].ZIndex = 2
-        Cache.ChinaHatDrawings[i][1].Thickness = 2
-        Cache.ChinaHatDrawings[i][2].ZIndex = 1
-        Cache.ChinaHatDrawings[i][2].Filled = true
-    end
-end
-
 local function hatRemoveClassic()
     if Cache.ChinaHatParts[LocalPlayer.Character] then
         pcall(function() Cache.ChinaHatParts[LocalPlayer.Character]:Destroy() end)
@@ -1481,63 +1238,9 @@ local function hatUpdateClassic()
     end
 end
 
-local function hatUpdateDrawing()
-    local pass = Settings.ChinaHatEnabled and
-        LocalPlayer.Character and
-        LocalPlayer.Character:FindFirstChild('Head') ~= nil and
-        (Camera.CFrame.p - Camera.Focus.p).Magnitude > 1 and
-        LocalPlayer.Character.Humanoid.Health > 0
-
-    for i = 1, #Cache.ChinaHatDrawings do
-        local line, triangle = Cache.ChinaHatDrawings[i][1], Cache.ChinaHatDrawings[i][2]
-        if pass then
-            local color
-            if Settings.ChinaHatRainbow then
-                color = Color3.fromHSV(
-                    (tick() % Settings.ChinaHatRainbowSpeed / Settings.ChinaHatRainbowSpeed -
-                        (i / #Cache.ChinaHatDrawings)) % 1,
-                    0.5,
-                    1
-                )
-            else
-                color = Settings.ChinaHatColor
-            end
-
-            local pos = LocalPlayer.Character.Head.Position + Vector3.new(0, 0.75, 0)
-            local topWorld = pos + Vector3.new(0, 0.75, 0)
-            local angle1 = (i / Settings.ChinaHatSides) * tau
-            local angle2 = ((i + 1) / Settings.ChinaHatSides) * tau
-
-            local lastWorld = pos + (Vector3.new(math.cos(angle1), 0, math.sin(angle1)) * Settings.ChinaHatRadius)
-            local nextWorld = pos + (Vector3.new(math.cos(angle2), 0, math.sin(angle2)) * Settings.ChinaHatRadius)
-
-            local lastScreen = Camera:WorldToViewportPoint(lastWorld)
-            local nextScreen = Camera:WorldToViewportPoint(nextWorld)
-            local topScreen = Camera:WorldToViewportPoint(topWorld)
-
-            line.From = Vector2.new(lastScreen.X, lastScreen.Y)
-            line.To = Vector2.new(nextScreen.X, nextScreen.Y)
-            line.Color = color
-            line.Transparency = 1 - Settings.ChinaHatTransparency
-            line.Visible = true
-
-            triangle.PointA = Vector2.new(topScreen.X, topScreen.Y)
-            triangle.PointB = line.From
-            triangle.PointC = line.To
-            triangle.Color = color
-            triangle.Transparency = 0.35
-            triangle.Visible = true
-        else
-            line.Visible = false
-            triangle.Visible = false
-        end
-    end
-end
-
 local function toggleChinaHat(value)
     Settings.ChinaHatEnabled = value
     if value then
-        createChinaHatDrawings()
         if Settings.ChinaHatStyle == "Classic" and LocalPlayer.Character then
             hatAddClassic(LocalPlayer.Character)
         end
@@ -1547,19 +1250,11 @@ local function toggleChinaHat(value)
         Cache.ChinaHatConnection = RunService.Heartbeat:Connect(function()
             if Settings.ChinaHatStyle == "Classic" then
                 hatUpdateClassic()
-            else
-                hatUpdateDrawing()
             end
         end)
         notify("China Hat", "Включен (" .. Settings.ChinaHatStyle .. ")", 2)
     else
         hatRemoveClassic()
-        for i = 1, #Cache.ChinaHatDrawings do
-            pcall(function()
-                Cache.ChinaHatDrawings[i][1].Visible = false
-                Cache.ChinaHatDrawings[i][2].Visible = false
-            end)
-        end
         if Cache.ChinaHatConnection then
             safeDisconnect(Cache.ChinaHatConnection)
             Cache.ChinaHatConnection = nil
@@ -1750,83 +1445,6 @@ local function toggleOrbiz(value)
 end
 
 -- ========================================
--- AIMBOT
--- ========================================
-local function getClosestMurderInFov()
-    local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-    local bestPlayer, bestDist = nil, math.huge
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player == LocalPlayer then continue end
-        if not checkKnife(player) then continue end
-        if not player.Character then continue end
-        local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
-        if not rootPart then continue end
-        local screenPos, onScreen = Camera:WorldToScreenPoint(rootPart.Position)
-        if not onScreen or screenPos.Z < 0 then continue end
-        local distance = (center - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
-        if distance <= Settings.FovRadius and distance < bestDist then
-            bestDist = distance
-            bestPlayer = player
-        end
-    end
-    return bestPlayer
-end
-
-local function createFovCircle()
-    if Cache.FovCircle then
-        pcall(function() Cache.FovCircle:Remove() end)
-    end
-    local circle = Drawing.new("Circle")
-    circle.Radius = Settings.FovRadius
-    circle.Color = Color3.fromRGB(255, 255, 255)
-    circle.Thickness = 1.5
-    circle.Transparency = 0.7
-    circle.Filled = false
-    circle.Visible = false
-    circle.NumSides = 64
-    Cache.FovCircle = circle
-end
-
-local function setupFovAimbot()
-    safeDisconnect(Cache.FovConnection)
-    Cache.FovConnection = nil
-    if Cache.FovCircle then
-        Cache.FovCircle.Visible = false
-    end
-    if not Settings.FovAimbotEnabled then return end
-    if not Cache.FovCircle then
-        createFovCircle()
-    end
-
-    local circle = Cache.FovCircle
-    Cache.FovConnection = RunService.RenderStepped:Connect(function()
-        if not Settings.FovAimbotEnabled then
-            circle.Visible = false
-            return
-        end
-        local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-        circle.Position = center
-        circle.Radius = Settings.FovRadius
-        circle.Visible = true
-
-        local target = getClosestMurderInFov()
-        if target then
-            circle.Color = Color3.fromRGB(255, 50, 50)
-            circle.Thickness = 2.0
-            local rootPart = target.Character:FindFirstChild("HumanoidRootPart")
-            if rootPart then
-                local velocity = rootPart.AssemblyLinearVelocity
-                local predictedPos = rootPart.Position + (velocity * 0.1)
-                Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position, predictedPos, Camera.CFrame.UpVector)
-            end
-        else
-            circle.Color = Color3.fromRGB(255, 255, 255)
-            circle.Thickness = 1.5
-        end
-    end)
-end
-
--- ========================================
 -- KILL ALL
 -- ========================================
 local function killPlayer(target)
@@ -1895,78 +1513,6 @@ local function toggleKillAll(value)
 end
 
 -- ========================================
--- SHERIFF AUTO SHOOT
--- ========================================
-local function sheriffAutoShootLoop()
-    while Settings.SheriffAutoShootEnabled do
-        task.wait(0.03)
-        if not LocalPlayer.Character then continue end
-        if not checkGun(LocalPlayer) then continue end
-
-        local myRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if not myRoot then continue end
-
-        local target, targetDist = nil, math.huge
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player == LocalPlayer then continue end
-            if not player.Character then continue end
-            if not checkKnife(player) then continue end
-
-            local targetPart = player.Character:FindFirstChild("Head") or
-                player.Character:FindFirstChild("HumanoidRootPart")
-            if not targetPart then continue end
-
-            local dist = (myRoot.Position - targetPart.Position).Magnitude
-            if dist < targetDist and dist <= 100 then
-                targetDist = dist
-                target = player
-            end
-        end
-
-        if target then
-            local targetPart = target.Character:FindFirstChild("Head") or
-                target.Character:FindFirstChild("HumanoidRootPart")
-            if targetPart then
-                local targetPos = targetPart.Position
-                if Settings.AimPredict then
-                    local vel = targetPart.AssemblyLinearVelocity
-                    targetPos = targetPos + (vel * 0.12)
-                end
-
-                local currentPos = Camera.CFrame.Position
-                local lookAt = CFrame.lookAt(currentPos, targetPos)
-
-                if Settings.AimSmoothness < 1 then
-                    local smoothPos = currentPos + (lookAt.Position - currentPos) * Settings.AimSmoothness
-                    Camera.CFrame = CFrame.lookAt(smoothPos, targetPos)
-                else
-                    Camera.CFrame = lookAt
-                end
-
-                pcall(function()
-                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.MouseButton1, false, game)
-                    task.wait(0.05)
-                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.MouseButton1, false, game)
-                end)
-                task.wait(0.25)
-            end
-        end
-    end
-end
-
-local function toggleSheriffAutoShoot(value)
-    Settings.SheriffAutoShootEnabled = value
-    safeDisconnect(Cache.SheriffAutoShootConnection)
-    Cache.SheriffAutoShootConnection = nil
-    if value then
-        Cache.SheriffAutoShootConnection = task.spawn(sheriffAutoShootLoop)
-        notify("Sheriff AutoShoot", "Включен", 2)
-    else
-        notify("Sheriff AutoShoot", "Выключен", 2)
-    end
-end
-
--- ========================================
 -- FLING
 -- ========================================
 local function flingPlayer(target)
@@ -2005,7 +1551,6 @@ local function grabGunImproved()
     local rootPart = character:FindFirstChild("HumanoidRootPart")
     if not rootPart then return end
 
-    -- Проверка, что игрок не убийца
     if checkKnife(LocalPlayer) then
         notify("Grab Gun", "Ты убийца, пушка не нужна!", 2)
         return
@@ -3219,21 +2764,12 @@ end)
 createToggle(visualCard, "Трассеры", Settings.TracersEnabled, function(value)
     Settings.TracersEnabled = value
     if value then
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then
-                createTracer(player)
-            end
-        end
-    else
-        clearAllTracers()
+        -- отключено на телефоне
     end
     startMainUpdate()
 end)
 createColorInput(visualCard, "Трассеры", Settings.TracersColor, function(value)
     Settings.TracersColor = value
-    for userId, line in pairs(Cache.Tracers) do
-        line.Color = value
-    end
 end)
 
 createToggle(visualCard, "Круги прыжка", Settings.JumpCircles, function(value)
@@ -3310,9 +2846,6 @@ createColorInput(visualCard, "China Hat", Settings.ChinaHatColor, function(value
 end)
 createButton(visualCard, "Hat Classic", function()
     hatChangeStyle("Classic")
-end)
-createButton(visualCard, "Hat Drawing", function()
-    hatChangeStyle("Drawing")
 end)
 
 createToggle(visualCard, "Aura", Settings.AuraEnabled, function(value)
@@ -3525,23 +3058,12 @@ for _, song in ipairs(SONGS) do
     end)
 end
 
--- Combat
+-- Combat (без FOV круга и VIM)
 local combatPage = TabPages["Combat"]
 local combatCard = createCard(combatPage, "Aimbot", 1)
 
-createToggle(combatCard, "FOV Aimbot", Settings.FovAimbotEnabled, function(value)
-    Settings.FovAimbotEnabled = value
-    if value then
-        createFovCircle()
-    end
-    setupFovAimbot()
-end)
-createSlider(combatCard, "Радиус FOV", 10, 600, Settings.FovRadius, function(value)
-    Settings.FovRadius = value
-    if Cache.FovCircle then
-        Cache.FovCircle.Radius = value
-    end
-end)
+-- Убираем FOV круг (он использует Drawing)
+-- Оставляем только настройки аима, но без визуализации
 createSlider(combatCard, "Smoothness", 1, 100, Settings.AimSmoothness * 100, function(value)
     Settings.AimSmoothness = value / 100
 end)
@@ -3597,6 +3119,73 @@ createToggle(combatCard, "Флинг Sheriff", Settings.FlingSheriff, function(v
         end
     end
 end)
+
+-- Sheriff AutoShoot (без VIM)
+local function sheriffAutoShootLoop()
+    while Settings.SheriffAutoShootEnabled do
+        task.wait(0.03)
+        if not LocalPlayer.Character then continue end
+        if not checkGun(LocalPlayer) then continue end
+
+        local myRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if not myRoot then continue end
+
+        local target, targetDist = nil, math.huge
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player == LocalPlayer then continue end
+            if not player.Character then continue end
+            if not checkKnife(player) then continue end
+
+            local targetPart = player.Character:FindFirstChild("Head") or
+                player.Character:FindFirstChild("HumanoidRootPart")
+            if not targetPart then continue end
+
+            local dist = (myRoot.Position - targetPart.Position).Magnitude
+            if dist < targetDist and dist <= 100 then
+                targetDist = dist
+                target = player
+            end
+        end
+
+        if target then
+            local targetPart = target.Character:FindFirstChild("Head") or
+                target.Character:FindFirstChild("HumanoidRootPart")
+            if targetPart then
+                local targetPos = targetPart.Position
+                if Settings.AimPredict then
+                    local vel = targetPart.AssemblyLinearVelocity
+                    targetPos = targetPos + (vel * 0.12)
+                end
+
+                local currentPos = Camera.CFrame.Position
+                local lookAt = CFrame.lookAt(currentPos, targetPos)
+
+                if Settings.AimSmoothness < 1 then
+                    local smoothPos = currentPos + (lookAt.Position - currentPos) * Settings.AimSmoothness
+                    Camera.CFrame = CFrame.lookAt(smoothPos, targetPos)
+                else
+                    Camera.CFrame = lookAt
+                end
+
+                -- Убираем VIM, оставляем только наведение
+                -- Вместо эмуляции клика можно оставить просто визуальное наведение
+                -- (на телефоне стрельба производится нажатием на экран)
+            end
+        end
+    end
+end
+
+local function toggleSheriffAutoShoot(value)
+    Settings.SheriffAutoShootEnabled = value
+    safeDisconnect(Cache.SheriffAutoShootConnection)
+    Cache.SheriffAutoShootConnection = nil
+    if value then
+        Cache.SheriffAutoShootConnection = task.spawn(sheriffAutoShootLoop)
+        notify("Sheriff AutoShoot", "Включен (только наведение)", 2)
+    else
+        notify("Sheriff AutoShoot", "Выключен", 2)
+    end
+end
 
 -- Settings
 local settingsPage = TabPages["Settings"]
@@ -3656,7 +3245,7 @@ local function bioLabel(text)
     lbl.Parent = bioCard
 end
 
-bioLabel("🚀 SkyHub Ultimate 5.0")
+bioLabel("🚀 SkyHub Ultimate 5.0 (Mobile)")
 bioLabel("Автор: dont16383")
 bioLabel("📱 Telegram: @kazobl")
 bioLabel("📢 Telegram канал: @SkyHub_Deltax")
@@ -3667,8 +3256,6 @@ bioLabel("✨ Спасибо за использование!")
 -- ЗАПУСК ОСНОВНЫХ ЦИКЛОВ
 -- ========================================
 startMainUpdate()
-createFovCircle()
-createChinaHatDrawings()
 switchTab("Player")
 
 -- ========================================
@@ -3818,7 +3405,7 @@ end)
 -- УВЕДОМЛЕНИЕ О ЗАГРУЗКЕ И АВТООТКРЫТИЕ
 -- ========================================
 notify("SkyHub", "Загружен!", 2)
-print("✅ SKYHUB ULTIMATE 5.0 LOADED!")
+print("✅ SKYHUB ULTIMATE 5.0 (MOBILE) LOADED!")
 
 -- Автооткрытие меню после загрузки
 task.wait(0.3)
